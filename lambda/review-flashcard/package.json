@@ -1,0 +1,9 @@
+{
+  "name": "review-flashcard",
+  "version": "1.0.0",
+  "description": "Lambda function for SM-2 flashcard review calculation",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1000.0"
+  }
+}

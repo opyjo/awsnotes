@@ -9,15 +9,29 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-amplify/ui-react": "^6.13.2",
+    "@tiptap/extension-code-block-lowlight": "^3.18.0",
+    "@tiptap/extension-image": "^3.18.0",
+    "@tiptap/react": "^3.18.0",
+    "@tiptap/starter-kit": "^3.18.0",
+    "aws-amplify": "^6.16.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "graphql": "^16.12.0",
+    "lowlight": "^3.3.0",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-dropzone": "^14.3.8",
+    "tailwind-merge": "^3.4.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
