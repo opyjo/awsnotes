@@ -12,7 +12,7 @@ const amplifyConfig = {
     GraphQL: {
       endpoint: process.env.NEXT_PUBLIC_APPSYNC_ENDPOINT!,
       region: process.env.NEXT_PUBLIC_AWS_REGION || "us-east-1",
-      defaultAuthMode: "iam" as const,
+      defaultAuthMode: "userPool" as const,
     },
   },
   Storage: {

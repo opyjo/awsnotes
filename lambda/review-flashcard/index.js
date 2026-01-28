@@ -6,6 +6,8 @@
 const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
+const TABLE_NAME = process.env.TABLE_NAME || 'aws-study-notes-flashcards';
+
 // SM-2 Algorithm
 function calculateSM2(quality, repetitions, easeFactor, interval) {
   // Quality: 0-5 (0-2 = fail, 3-5 = pass)
@@ -44,12 +46,12 @@ function calculateSM2(quality, repetitions, easeFactor, interval) {
 }
 
 exports.handler = async (event) => {
-  const { cardId, quality, userId } = event.arguments;
+  const { cardId, quality, userId } = event.arguments || event;
 
   try {
     // Get current flashcard
     const getParams = {
-      TableName: 'aws-study-notes-flashcards',
+      TableName: TABLE_NAME,
       Key: {
         PK: userId,
         SK: `CARD#${cardId}`,
@@ -74,7 +76,7 @@ exports.handler = async (event) => {
 
     // Update flashcard
     const updateParams = {
-      TableName: 'aws-study-notes-flashcards',
+      TableName: TABLE_NAME,
       Key: {
         PK: userId,
         SK: `CARD#${cardId}`,

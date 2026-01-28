@@ -1,0 +1,61 @@
+type Note {
+  noteId: ID!
+  title: String!
+  content: String!
+  category: String
+  tags: [String]
+  images: [String]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Flashcard {
+  cardId: ID!
+  deckId: ID!
+  front: String!
+  back: String!
+  noteId: ID
+  easeFactor: Float!
+  interval: Int!
+  repetitions: Int!
+  nextReviewDate: AWSDateTime!
+  createdAt: AWSDateTime!
+}
+
+input CreateNoteInput {
+  title: String!
+  content: String!
+  category: String
+  tags: [String]
+  images: [String]
+}
+
+input UpdateNoteInput {
+  title: String
+  content: String
+  category: String
+  tags: [String]
+  images: [String]
+}
+
+input CreateFlashcardInput {
+  deckId: ID!
+  front: String!
+  back: String!
+  noteId: ID
+}
+
+type Query {
+  getNotes: [Note]
+  getNote(noteId: ID!): Note
+  getFlashcards(deckId: ID!): [Flashcard]
+  getDueFlashcards: [Flashcard]
+}
+
+type Mutation {
+  createNote(input: CreateNoteInput!): Note
+  updateNote(noteId: ID!, input: UpdateNoteInput!): Note
+  deleteNote(noteId: ID!): Boolean
+  createFlashcard(input: CreateFlashcardInput!): Flashcard
+  reviewFlashcard(cardId: ID!, quality: Int!): Flashcard
+}

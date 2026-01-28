@@ -52,6 +52,11 @@ samconfig.toml
 *.zip
 lambda-packages/
 
+# CDK
+infrastructure/cdk.out/
+infrastructure/cdk-outputs.json
+*.js.map
+
 # IDE
 .vscode/
 .idea/

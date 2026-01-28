@@ -59,12 +59,7 @@ This guide walks you through setting up all AWS services required for the applic
 6. **Table settings**: Use default settings
 7. Click **Create table**
 
-**After creation, add Global Secondary Index:**
-1. Go to **Indexes** tab
-2. Click **Create index**
-3. **Index name**: `userId-index`
-4. **Partition key**: `PK` (String)
-5. Click **Create index**
+**Note**: Since PK is already the partition key, no additional GSI is needed for the Notes table. The table's primary key (PK + SK) already allows querying by user.
 
 ### 2.2 Create Flashcards Table
 
@@ -74,16 +69,9 @@ This guide walks you through setting up all AWS services required for the applic
 4. **Sort key**: `SK` (String)
 5. Click **Create table**
 
-**Add Global Secondary Indexes:**
+**Add Global Secondary Index for due flashcards:**
 
-**Index 1: userId-index**
-1. Go to **Indexes** tab
-2. Click **Create index**
-3. **Index name**: `userId-index`
-4. **Partition key**: `PK` (String)
-5. Click **Create index**
-
-**Index 2: nextReviewDate-index**
+**Index: nextReviewDate-index**
 1. Click **Create index**
 2. **Index name**: `nextReviewDate-index`
 3. **Partition key**: `PK` (String)
@@ -207,8 +195,9 @@ This guide walks you through setting up all AWS services required for the applic
 
 1. Go to **Settings** in the left sidebar
 2. Under **Default authorization mode**, click **Edit**
-3. Choose **AWS IAM**
-4. Click **Save**
+3. Choose **Amazon Cognito User Pool**
+4. Select your Cognito User Pool (created in Step 1)
+5. Click **Save**
 
 ### 5.3 Add GraphQL Schema
 
@@ -314,18 +303,12 @@ Create the following data sources:
 {
   "version": "2017-02-28",
   "operation": "Query",
-  "index": "userId-index",
   "query": {
-    "expression": "PK = :userId",
+    "expression": "PK = :userId AND begins_with(SK, :notePrefix)",
     "expressionValues": {
       ":userId": {
         "S": "$ctx.identity.sub"
-      }
-    }
-  },
-  "filter": {
-    "expression": "begins_with(SK, :notePrefix)",
-    "expressionValues": {
+      },
       ":notePrefix": {
         "S": "NOTE#"
       }
@@ -527,7 +510,7 @@ $util.toJson($ctx.result)
 4. **Response mapping template**:
 
 ```vtl
-{"result": true}
+true
 ```
 
 #### Resolver 6: getFlashcards Query
@@ -540,21 +523,20 @@ $util.toJson($ctx.result)
 {
   "version": "2017-02-28",
   "operation": "Query",
-  "index": "userId-index",
   "query": {
-    "expression": "PK = :userId",
+    "expression": "PK = :userId AND begins_with(SK, :cardPrefix)",
     "expressionValues": {
       ":userId": {
         "S": "$ctx.identity.sub"
+      },
+      ":cardPrefix": {
+        "S": "CARD#"
       }
     }
   },
   "filter": {
-    "expression": "begins_with(SK, :cardPrefix) AND deckId = :deckId",
+    "expression": "deckId = :deckId",
     "expressionValues": {
-      ":cardPrefix": {
-        "S": "CARD#"
-      },
       ":deckId": {
         "S": "$ctx.arguments.deckId"
       }
@@ -677,10 +659,8 @@ $util.toJson($ctx.result)
   "payload": {
     "arguments": {
       "cardId": "$ctx.arguments.cardId",
-      "quality": $ctx.arguments.quality
-    },
-    "identity": {
-      "sub": "$ctx.identity.sub"
+      "quality": $ctx.arguments.quality,
+      "userId": "$ctx.identity.sub"
     }
   }
 }
