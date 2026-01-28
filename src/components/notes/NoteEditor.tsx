@@ -4,10 +4,13 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { lowlight } from "lowlight";
+import { common, createLowlight } from "lowlight";
 import { ImageUploader } from "@/components/upload/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Create lowlight instance with common languages
+const lowlight = createLowlight(common);
 
 interface NoteEditorProps {
   content: string;
@@ -22,7 +25,10 @@ export const NoteEditor = ({
 }: NoteEditorProps) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable the default code block since we're using CodeBlockLowlight
+        codeBlock: false,
+      }),
       Image.configure({
         inline: true,
         allowBase64: false,
@@ -32,6 +38,7 @@ export const NoteEditor = ({
       }),
     ],
     content,
+    immediatelyRender: false, // Prevent SSR hydration mismatch
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },

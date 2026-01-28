@@ -1,8 +1,16 @@
-import { generateClient } from "aws-amplify/api";
+import { generateClient, GraphQLResult } from "aws-amplify/api";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 
 const client = generateClient();
+
+// Helper to extract data from GraphQL response
+const getData = <T>(response: GraphQLResult<T>): T => {
+  if ('data' in response && response.data) {
+    return response.data;
+  }
+  throw new Error('No data in GraphQL response');
+};
 
 const GET_NOTES = `
   query GetNotes {
@@ -142,24 +150,24 @@ export const notesApi = {
   getNotes: async (): Promise<Note[]> => {
     const response = await client.graphql({
       query: GET_NOTES,
-    });
-    return response.data.getNotes || [];
+    }) as GraphQLResult<{ getNotes: Note[] }>;
+    return response.data?.getNotes || [];
   },
 
   getNote: async (noteId: string): Promise<Note | null> => {
     const response = await client.graphql({
       query: GET_NOTE,
       variables: { noteId },
-    });
-    return response.data.getNote;
+    }) as GraphQLResult<{ getNote: Note | null }>;
+    return response.data?.getNote || null;
   },
 
   createNote: async (input: CreateNoteInput): Promise<Note> => {
     const response = await client.graphql({
       query: CREATE_NOTE,
       variables: { input },
-    });
-    return response.data.createNote;
+    }) as GraphQLResult<{ createNote: Note }>;
+    return response.data!.createNote;
   },
 
   updateNote: async (
@@ -169,16 +177,16 @@ export const notesApi = {
     const response = await client.graphql({
       query: UPDATE_NOTE,
       variables: { noteId, input },
-    });
-    return response.data.updateNote;
+    }) as GraphQLResult<{ updateNote: Note }>;
+    return response.data!.updateNote;
   },
 
   deleteNote: async (noteId: string): Promise<boolean> => {
     const response = await client.graphql({
       query: DELETE_NOTE,
       variables: { noteId },
-    });
-    return response.data.deleteNote;
+    }) as GraphQLResult<{ deleteNote: boolean }>;
+    return response.data?.deleteNote ?? false;
   },
 };
 
@@ -187,15 +195,15 @@ export const flashcardsApi = {
     const response = await client.graphql({
       query: GET_FLASHCARDS,
       variables: { deckId },
-    });
-    return response.data.getFlashcards || [];
+    }) as GraphQLResult<{ getFlashcards: Flashcard[] }>;
+    return response.data?.getFlashcards || [];
   },
 
   getDueFlashcards: async (): Promise<Flashcard[]> => {
     const response = await client.graphql({
       query: GET_DUE_FLASHCARDS,
-    });
-    return response.data.getDueFlashcards || [];
+    }) as GraphQLResult<{ getDueFlashcards: Flashcard[] }>;
+    return response.data?.getDueFlashcards || [];
   },
 
   createFlashcard: async (
@@ -204,8 +212,8 @@ export const flashcardsApi = {
     const response = await client.graphql({
       query: CREATE_FLASHCARD,
       variables: { input },
-    });
-    return response.data.createFlashcard;
+    }) as GraphQLResult<{ createFlashcard: Flashcard }>;
+    return response.data!.createFlashcard;
   },
 
   reviewFlashcard: async (
@@ -215,7 +223,7 @@ export const flashcardsApi = {
     const response = await client.graphql({
       query: REVIEW_FLASHCARD,
       variables: { cardId, quality },
-    });
-    return response.data.reviewFlashcard;
+    }) as GraphQLResult<{ reviewFlashcard: Flashcard }>;
+    return response.data!.reviewFlashcard;
   },
 };

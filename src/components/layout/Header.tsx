@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "./MobileMenu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
@@ -35,14 +36,17 @@ export const Header = () => {
             Flashcards
           </Link>
         </nav>
-        {user && (
-          <div className="flex items-center gap-2 md:gap-4">
-            <span className="hidden md:inline text-sm text-muted-foreground">{user.email}</span>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 md:gap-4">
+          <ThemeToggle />
+          {user && (
+            <>
+              <span className="hidden md:inline text-sm text-muted-foreground">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

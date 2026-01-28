@@ -58,11 +58,16 @@ export interface DialogTriggerProps {
 export const DialogTrigger = ({ children, asChild }: DialogTriggerProps) => {
   const { onOpenChange } = useDialogContext();
   
-  return React.cloneElement(
-    children as React.ReactElement,
-    {
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<{ onClick?: () => void }>, {
       onClick: () => onOpenChange(true),
-    }
+    });
+  }
+
+  return (
+    <button type="button" onClick={() => onOpenChange(true)}>
+      {children}
+    </button>
   );
 };
 
@@ -158,17 +163,32 @@ export const DialogFooter = React.forwardRef<HTMLDivElement, DialogFooterProps>(
 );
 DialogFooter.displayName = "DialogFooter";
 
-export interface DialogCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export interface DialogCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
 
 export const DialogClose = React.forwardRef<HTMLButtonElement, DialogCloseProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, children, asChild, ...props }, ref) => {
     const { onOpenChange } = useDialogContext();
+    
+    const handleClose = () => onOpenChange(false);
+
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children as React.ReactElement<any>, {
+        onClick: (e: React.MouseEvent) => {
+          handleClose();
+          // Call original onClick if exists
+          (children as React.ReactElement<any>).props.onClick?.(e);
+        },
+        ref,
+      });
+    }
     
     return (
       <button
         ref={ref}
         type="button"
-        onClick={() => onOpenChange(false)}
+        onClick={handleClose}
         className={className}
         {...props}
       >
