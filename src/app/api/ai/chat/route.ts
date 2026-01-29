@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
 import { streamChatCompletion as streamAnthropic } from "@/lib/anthropic";
-import type { ModelProvider } from "@/types/chat";
+import { AVAILABLE_MODELS, type ModelId, type OpenAIModel, type AnthropicModel } from "@/types/chat";
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
@@ -16,22 +16,54 @@ const AWS_SYSTEM_PROMPT = `You are an expert AWS Cloud Architect exam tutor. You
 
 Keep responses focused and exam-relevant. When appropriate, mention which AWS certification level (Practitioner, Associate, Professional) the concept is most relevant for.`;
 
+// o1 models don't support system messages, so we prepend it to the first user message
+const isO1Model = (model: string) => model.startsWith("o1");
+
 const streamOpenAI = async function* (
-  messages: Array<{ role: "user" | "assistant"; content: string }>
+  messages: Array<{ role: "user" | "assistant"; content: string }>,
+  model: OpenAIModel
 ): AsyncGenerator<string, void, unknown> {
   if (!openai) {
     throw new Error("OpenAI API key is not configured");
   }
 
+  // Handle o1 models differently - they don't support system messages or streaming
+  if (isO1Model(model)) {
+    const modifiedMessages = messages.map((msg, index) => {
+      if (index === 0 && msg.role === "user") {
+        return {
+          role: "user" as const,
+          content: `${AWS_SYSTEM_PROMPT}\n\n${msg.content}`,
+        };
+      }
+      return {
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      };
+    });
+
+    const response = await openai.chat.completions.create({
+      model,
+      messages: modifiedMessages,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (content) {
+      yield content;
+    }
+    return;
+  }
+
+  // Regular models with streaming
   const stream = await openai.chat.completions.create({
-    model: "gpt-4",
+    model,
     messages: [
       {
         role: "system",
         content: AWS_SYSTEM_PROMPT,
       },
       ...messages.map((msg) => ({
-        role: msg.role === "assistant" ? "assistant" : "user",
+        role: msg.role as "user" | "assistant",
         content: msg.content,
       })),
     ],
@@ -58,7 +90,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     const body = await req.json();
-    const { messages, model }: { messages: Array<{ role: "user" | "assistant"; content: string }>; model: ModelProvider } = body;
+    const { messages, model }: { messages: Array<{ role: "user" | "assistant"; content: string }>; model: ModelId } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -67,9 +99,10 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    if (!model || (model !== "openai" && model !== "anthropic")) {
+    const modelConfig = AVAILABLE_MODELS.find((m) => m.id === model);
+    if (!modelConfig) {
       return new Response(
-        JSON.stringify({ error: "model must be 'openai' or 'anthropic'" }),
+        JSON.stringify({ error: "Invalid model selected" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -79,9 +112,9 @@ export const POST = async (req: NextRequest) => {
       async start(controller) {
         try {
           const generator =
-            model === "openai"
-              ? streamOpenAI(messages)
-              : streamAnthropic(messages, AWS_SYSTEM_PROMPT);
+            modelConfig.provider === "openai"
+              ? streamOpenAI(messages, model as OpenAIModel)
+              : streamAnthropic(messages, AWS_SYSTEM_PROMPT, model as AnthropicModel);
 
           for await (const chunk of generator) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));

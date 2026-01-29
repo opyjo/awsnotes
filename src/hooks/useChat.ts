@@ -2,19 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getAuthToken } from "@/lib/aws/cognito";
-import type { ChatMessage, ChatState, ModelProvider } from "@/types/chat";
+import type { ChatMessage, ChatState, ModelId } from "@/types/chat";
 
 const STORAGE_KEY = "aws-study-chat-history";
-const DEFAULT_MODEL: ModelProvider = "openai";
+const DEFAULT_MODEL: ModelId = "gpt-4o";
 
 interface UseChatResult {
   messages: ChatMessage[];
-  selectedModel: ModelProvider;
+  selectedModel: ModelId;
   isLoading: boolean;
   error: string | null;
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
-  setModel: (model: ModelProvider) => void;
+  setModel: (model: ModelId) => void;
 }
 
 const loadFromStorage = (): ChatState | null => {
@@ -41,7 +41,7 @@ const saveToStorage = (state: ChatState) => {
 
 export const useChat = (): UseChatResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [selectedModel, setSelectedModel] = useState<ModelProvider>(DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_MODEL);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,7 +172,7 @@ export const useChat = (): UseChatResult => {
     }
   }, []);
 
-  const setModel = useCallback((model: ModelProvider) => {
+  const setModel = useCallback((model: ModelId) => {
     setSelectedModel(model);
   }, []);
 

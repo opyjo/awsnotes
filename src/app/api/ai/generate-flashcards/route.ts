@@ -13,7 +13,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     const body = await req.json();
-    const { noteContent } = body;
+    const { noteContent, count } = body;
 
     if (!noteContent || typeof noteContent !== "string") {
       return NextResponse.json(
@@ -22,7 +22,8 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const flashcards = await generateFlashcards(noteContent);
+    const flashcardCount = count && typeof count === "number" ? Math.max(1, Math.min(20, count)) : 5;
+    const flashcards = await generateFlashcards(noteContent, flashcardCount);
 
     return NextResponse.json({ flashcards });
   } catch (error) {

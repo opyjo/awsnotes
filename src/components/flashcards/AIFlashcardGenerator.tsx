@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useAI } from "@/hooks/useAI";
 import { useFlashcards } from "@/context/FlashcardsContext";
 import { useNotes } from "@/context/NotesContext";
@@ -52,6 +53,7 @@ export const AIFlashcardGenerator = ({
     noteId || ""
   );
   const [inputMode, setInputMode] = useState<"select" | "paste">("select");
+  const [flashcardCount, setFlashcardCount] = useState<number>(5);
 
   // Fetch notes when dialog opens
   useEffect(() => {
@@ -132,7 +134,7 @@ export const AIFlashcardGenerator = ({
     }
 
     try {
-      const flashcards = await generateFlashcards(noteContent);
+      const flashcards = await generateFlashcards(noteContent, flashcardCount);
       setGeneratedFlashcards(flashcards);
       // Select all by default
       setSelectedFlashcards(new Set(flashcards.map((_, i) => i)));
@@ -244,6 +246,7 @@ export const AIFlashcardGenerator = ({
     setSelectedNoteId(noteId || "");
     setFetchingNote(false);
     setInputMode("select");
+    setFlashcardCount(5);
     onOpenChange(false);
   };
 
@@ -359,45 +362,69 @@ export const AIFlashcardGenerator = ({
           )}
 
           {!fetchingNote && generatedFlashcards.length === 0 && (
-            <div className="text-center py-8">
-              <Button
-                onClick={handleGenerate}
-                disabled={
-                  loading ||
-                  (!providedNoteContent &&
-                    !noteId &&
-                    !noteContent.trim() &&
-                    !selectedNoteId)
-                }
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Generating...
-                  </span>
-                ) : (
-                  "Generate Flashcards"
-                )}
-              </Button>
+            <div className="space-y-4 py-8">
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="flashcard-count" className="text-sm font-medium">
+                    Number of flashcards:
+                  </Label>
+                  <Input
+                    id="flashcard-count"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={flashcardCount}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value, 10);
+                      if (!isNaN(value) && value >= 1 && value <= 20) {
+                        setFlashcardCount(value);
+                      }
+                    }}
+                    className="w-20"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="text-center">
+                <Button
+                  onClick={handleGenerate}
+                  disabled={
+                    loading ||
+                    (!providedNoteContent &&
+                      !noteId &&
+                      !noteContent.trim() &&
+                      !selectedNoteId)
+                  }
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    `Generate ${flashcardCount} Flashcard${flashcardCount !== 1 ? "s" : ""}`
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 

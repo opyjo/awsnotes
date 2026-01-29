@@ -56,7 +56,7 @@ export const ChatInput = ({
                 key={index}
                 type="button"
                 onClick={() => handleSuggestedClick(question)}
-                className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
               >
                 {question}
               </button>
@@ -75,7 +75,7 @@ export const ChatInput = ({
               placeholder="Ask about AWS concepts..."
               disabled={isLoading}
               rows={1}
-              className="resize-none min-h-[44px] max-h-[120px]"
+              className="resize-none min-h-[44px] max-h-[120px] text-sm"
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = "auto";

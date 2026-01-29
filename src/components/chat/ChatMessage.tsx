@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNotes } from "@/context/NotesContext";
 import { useToast } from "@/components/ui/toast";
-import type { ChatMessage as ChatMessageType } from "@/types/chat";
+import { AVAILABLE_MODELS, type ChatMessage as ChatMessageType } from "@/types/chat";
+import { markdownToHtml } from "@/lib/markdown-to-html";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -27,25 +28,167 @@ const formatTimestamp = (timestamp: number) => {
   return date.toLocaleDateString();
 };
 
+const renderInlineMarkdown = (text: string): React.ReactNode => {
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  while (remaining.length > 0) {
+    // Bold **text**
+    const boldMatch = remaining.match(/^\*\*(.+?)\*\*/);
+    if (boldMatch) {
+      parts.push(<strong key={keyIndex++} className="font-semibold">{renderInlineMarkdown(boldMatch[1])}</strong>);
+      remaining = remaining.slice(boldMatch[0].length);
+      continue;
+    }
+
+    // Italic *text* or _text_
+    const italicMatch = remaining.match(/^\*([^*]+)\*/) || remaining.match(/^_([^_]+)_/);
+    if (italicMatch) {
+      parts.push(<em key={keyIndex++}>{renderInlineMarkdown(italicMatch[1])}</em>);
+      remaining = remaining.slice(italicMatch[0].length);
+      continue;
+    }
+
+    // Inline code `code`
+    const codeMatch = remaining.match(/^`([^`]+)`/);
+    if (codeMatch) {
+      parts.push(
+        <code
+          key={keyIndex++}
+          className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono"
+        >
+          {codeMatch[1]}
+        </code>
+      );
+      remaining = remaining.slice(codeMatch[0].length);
+      continue;
+    }
+
+    // Link [text](url)
+    const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+    if (linkMatch) {
+      parts.push(
+        <a
+          key={keyIndex++}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline hover:no-underline"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+      remaining = remaining.slice(linkMatch[0].length);
+      continue;
+    }
+
+    // Plain text character
+    parts.push(remaining[0]);
+    remaining = remaining.slice(1);
+  }
+
+  // Merge consecutive strings
+  const merged: React.ReactNode[] = [];
+  let currentString = "";
+  for (const part of parts) {
+    if (typeof part === "string") {
+      currentString += part;
+    } else {
+      if (currentString) {
+        merged.push(currentString);
+        currentString = "";
+      }
+      merged.push(part);
+    }
+  }
+  if (currentString) {
+    merged.push(currentString);
+  }
+
+  return merged.length === 1 ? merged[0] : <>{merged}</>;
+};
+
+const parseTable = (lines: string[], startIndex: number): { table: React.ReactNode; endIndex: number } | null => {
+  const tableLines: string[] = [];
+  let i = startIndex;
+
+  // Collect all table lines
+  while (i < lines.length && lines[i].includes("|")) {
+    tableLines.push(lines[i]);
+    i++;
+  }
+
+  if (tableLines.length < 2) return null;
+
+  // Check for separator line
+  const separatorIndex = tableLines.findIndex(line => /^\|?[\s-:|]+\|?$/.test(line.trim()));
+  if (separatorIndex === -1) return null;
+
+  const parseRow = (line: string): string[] => {
+    return line
+      .split("|")
+      .map(cell => cell.trim())
+      .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1 || (arr.length === 2 && idx === 0));
+  };
+
+  const headerRow = parseRow(tableLines[0]);
+  const bodyRows = tableLines.slice(separatorIndex + 1).map(parseRow);
+
+  const table = (
+    <div className="overflow-x-auto my-4">
+      <table className="min-w-full border-collapse text-xs">
+        <thead>
+          <tr className="border-b-2 border-border">
+            {headerRow.map((cell, idx) => (
+              <th key={idx} className="px-3 py-2 text-left font-semibold bg-muted/50">
+                {renderInlineMarkdown(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bodyRows.map((row, rowIdx) => (
+            <tr key={rowIdx} className="border-b border-border hover:bg-muted/30 transition-colors">
+              {row.map((cell, cellIdx) => (
+                <td key={cellIdx} className="px-3 py-2">
+                  {renderInlineMarkdown(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  return { table, endIndex: i - 1 };
+};
+
 const renderMarkdown = (content: string) => {
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
-  let currentParagraph: string[] = [];
   let inCodeBlock = false;
-  let codeBlockLanguage = "";
   let codeBlockContent: string[] = [];
+  let listItems: { type: "ul" | "ol"; items: React.ReactNode[] } | null = null;
+  let i = 0;
 
-  const flushParagraph = () => {
-    if (currentParagraph.length > 0) {
-      const text = currentParagraph.join("\n");
-      if (text.trim()) {
+  const flushList = () => {
+    if (listItems && listItems.items.length > 0) {
+      if (listItems.type === "ul") {
         elements.push(
-          <p key={elements.length} className="mb-2 last:mb-0">
-            {renderInlineMarkdown(text)}
-          </p>
+          <ul key={elements.length} className="list-disc list-outside ml-6 my-3 space-y-1">
+            {listItems.items}
+          </ul>
+        );
+      } else {
+        elements.push(
+          <ol key={elements.length} className="list-decimal list-outside ml-6 my-3 space-y-1">
+            {listItems.items}
+          </ol>
         );
       }
-      currentParagraph = [];
+      listItems = null;
     }
   };
 
@@ -54,123 +197,150 @@ const renderMarkdown = (content: string) => {
       elements.push(
         <pre
           key={elements.length}
-          className="bg-muted rounded-md p-4 overflow-x-auto mb-2 text-sm"
+          className="bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto my-4 text-xs font-mono"
         >
           <code>{codeBlockContent.join("\n")}</code>
         </pre>
       );
       codeBlockContent = [];
-      codeBlockLanguage = "";
     }
   };
 
-  const renderInlineMarkdown = (text: string): React.ReactNode => {
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-
-    // Bold **text**
-    const boldRegex = /\*\*(.+?)\*\*/g;
-    let match;
-    const matches: Array<{ start: number; end: number; text: string }> = [];
-
-    while ((match = boldRegex.exec(text)) !== null) {
-      matches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[1],
-      });
-    }
-
-    // Code `code`
-    const codeRegex = /`([^`]+)`/g;
-    while ((match = codeRegex.exec(text)) !== null) {
-      matches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-        text: match[1],
-        isCode: true,
-      });
-    }
-
-    matches.sort((a, b) => a.start - b.start);
-
-    for (const m of matches) {
-      if (m.start > lastIndex) {
-        parts.push(text.slice(lastIndex, m.start));
-      }
-      if ((m as any).isCode) {
-        parts.push(
-          <code
-            key={lastIndex}
-            className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono"
-          >
-            {m.text}
-          </code>
-        );
-      } else {
-        parts.push(<strong key={lastIndex}>{m.text}</strong>);
-      }
-      lastIndex = m.end;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts.length > 0 ? <>{parts}</> : text;
-  };
-
-  for (let i = 0; i < lines.length; i++) {
+  while (i < lines.length) {
     const line = lines[i];
 
+    // Code block
     if (line.startsWith("```")) {
       if (inCodeBlock) {
         flushCodeBlock();
         inCodeBlock = false;
       } else {
-        flushParagraph();
+        flushList();
         inCodeBlock = true;
-        codeBlockLanguage = line.slice(3).trim();
       }
+      i++;
       continue;
     }
 
     if (inCodeBlock) {
       codeBlockContent.push(line);
+      i++;
       continue;
     }
 
+    // Empty line
     if (line.trim() === "") {
-      flushParagraph();
+      flushList();
+      i++;
       continue;
     }
 
-    if (line.startsWith("- ") || line.startsWith("* ")) {
-      flushParagraph();
-      const itemText = line.slice(2);
+    // Horizontal rule
+    if (/^[-*_]{3,}\s*$/.test(line)) {
+      flushList();
+      elements.push(<hr key={elements.length} className="my-6 border-border" />);
+      i++;
+      continue;
+    }
+
+    // Headers
+    const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headerMatch) {
+      flushList();
+      const level = headerMatch[1].length;
+      const text = headerMatch[2];
+      const HeaderTag = `h${level}` as keyof JSX.IntrinsicElements;
+      const headerClasses: Record<number, string> = {
+        1: "text-lg font-bold mt-4 mb-3 text-foreground",
+        2: "text-base font-bold mt-3 mb-2 text-foreground border-b border-border pb-1",
+        3: "text-sm font-semibold mt-3 mb-2 text-foreground",
+        4: "text-sm font-semibold mt-2 mb-1 text-foreground",
+        5: "text-xs font-semibold mt-2 mb-1 text-foreground",
+        6: "text-xs font-medium mt-2 mb-1 text-muted-foreground",
+      };
       elements.push(
-        <li key={elements.length} className="mb-1 ml-4">
-          {renderInlineMarkdown(itemText)}
+        <HeaderTag key={elements.length} className={headerClasses[level]}>
+          {renderInlineMarkdown(text)}
+        </HeaderTag>
+      );
+      i++;
+      continue;
+    }
+
+    // Table
+    if (line.includes("|")) {
+      flushList();
+      const tableResult = parseTable(lines, i);
+      if (tableResult) {
+        elements.push(<React.Fragment key={elements.length}>{tableResult.table}</React.Fragment>);
+        i = tableResult.endIndex + 1;
+        continue;
+      }
+    }
+
+    // Unordered list
+    const ulMatch = line.match(/^(\s*)[-*+]\s+(.+)$/);
+    if (ulMatch) {
+      const indent = ulMatch[1].length;
+      const text = ulMatch[2];
+      if (!listItems || listItems.type !== "ul") {
+        flushList();
+        listItems = { type: "ul", items: [] };
+      }
+      listItems.items.push(
+        <li key={listItems.items.length} className={cn(indent > 0 && "ml-4")}>
+          {renderInlineMarkdown(text)}
         </li>
       );
+      i++;
       continue;
     }
 
-    if (/^\d+\.\s/.test(line)) {
-      flushParagraph();
-      const itemText = line.replace(/^\d+\.\s/, "");
-      elements.push(
-        <li key={elements.length} className="mb-1 ml-4 list-decimal">
-          {renderInlineMarkdown(itemText)}
+    // Ordered list
+    const olMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
+    if (olMatch) {
+      const indent = olMatch[1].length;
+      const text = olMatch[2];
+      if (!listItems || listItems.type !== "ol") {
+        flushList();
+        listItems = { type: "ol", items: [] };
+      }
+      listItems.items.push(
+        <li key={listItems.items.length} className={cn(indent > 0 && "ml-4")}>
+          {renderInlineMarkdown(text)}
         </li>
       );
+      i++;
       continue;
     }
 
-    currentParagraph.push(line);
+    // Blockquote
+    if (line.startsWith(">")) {
+      flushList();
+      const quoteText = line.replace(/^>\s?/, "");
+      elements.push(
+        <blockquote
+          key={elements.length}
+          className="border-l-4 border-primary/50 pl-4 my-3 italic text-muted-foreground text-sm"
+        >
+          {renderInlineMarkdown(quoteText)}
+        </blockquote>
+      );
+      i++;
+      continue;
+    }
+
+    // Regular paragraph
+    flushList();
+    elements.push(
+      <p key={elements.length} className="my-2 leading-relaxed text-sm">
+        {renderInlineMarkdown(line)}
+      </p>
+    );
+    i++;
   }
 
-  flushParagraph();
+  flushList();
   flushCodeBlock();
 
   return elements.length > 0 ? <>{elements}</> : <p>{content}</p>;
@@ -184,17 +354,21 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
   const [isSaving, setIsSaving] = React.useState(false);
 
   const isUser = message.role === "user";
-  const modelBadge = message.model === "anthropic" ? "Claude" : message.model === "openai" ? "GPT-4" : null;
+  const modelConfig = message.model ? AVAILABLE_MODELS.find((m) => m.id === message.model) : null;
+  const modelBadge = modelConfig?.name || null;
 
   const handleSaveToNotes = async () => {
     if (!noteTitle.trim()) return;
 
     setIsSaving(true);
     try {
+      // Convert markdown to HTML for TipTap editor
+      const htmlContent = markdownToHtml(message.content);
+      
       await createNote({
         title: noteTitle.trim(),
-        content: message.content,
-        tags: ["ai-chat", message.model || "openai"],
+        content: htmlContent,
+        tags: ["ai-chat", message.model || "gpt-4o"],
       });
       setSaveDialogOpen(false);
       setNoteTitle("");
@@ -242,78 +416,108 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
 
         <div
           className={cn(
-            "flex flex-col gap-1 max-w-[85%] md:max-w-[70%]",
+            "flex flex-col gap-1 max-w-[90%] md:max-w-[80%]",
             isUser && "items-end"
           )}
         >
           <div
             className={cn(
-              "rounded-lg px-4 py-3",
+              "rounded-xl px-4 py-3 shadow-sm",
               isUser
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground"
+                ? "bg-primary text-primary-foreground rounded-br-sm"
+                : "bg-card border border-border rounded-bl-sm"
             )}
           >
             {isUser ? (
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+              <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
             ) : (
-              <div className="prose prose-sm max-w-none dark:prose-invert">
+              <div className="text-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                 {renderMarkdown(message.content)}
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
             {modelBadge && (
-              <span className="px-2 py-0.5 rounded-full bg-background border border-border text-xs">
+              <span className="px-2 py-0.5 rounded-full bg-primary/5 border border-primary/20 text-xs font-medium">
                 {modelBadge}
               </span>
             )}
             <span>{formatTimestamp(message.timestamp)}</span>
             {!isUser && (
               <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(message.content);
-                  }}
-                  className="hover:text-foreground transition-colors"
-                  aria-label="Copy message"
-                >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      // Convert markdown to HTML for better paste compatibility
+                      const htmlContent = markdownToHtml(message.content);
+                      
+                      // Use Clipboard API to write both HTML and plain text
+                      const clipboardItem = new ClipboardItem({
+                        "text/html": new Blob([htmlContent], { type: "text/html" }),
+                        "text/plain": new Blob([message.content], { type: "text/plain" }),
+                      });
+                      
+                      try {
+                        await navigator.clipboard.write([clipboardItem]);
+                        addToast({ type: "success", message: "Copied to clipboard!" });
+                      } catch (err) {
+                        // Fallback to plain text if ClipboardItem API fails
+                        await navigator.clipboard.writeText(message.content);
+                        addToast({ type: "success", message: "Copied to clipboard!" });
+                      }
+                    }}
+                    className="hover:text-foreground transition-colors p-1 rounded hover:bg-muted cursor-pointer"
+                    aria-label="Copy message"
+                    title="Copy message"
+                    tabIndex={0}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSaveDialogOpen(true)}
-                  className="hover:text-foreground transition-colors"
-                  aria-label="Save to notes"
-                >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </button>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    Copy message
+                  </span>
+                </div>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setSaveDialogOpen(true)}
+                    className="hover:text-foreground transition-colors p-1 rounded hover:bg-muted cursor-pointer"
+                    aria-label="Save to notes"
+                    title="Save to notes"
+                    tabIndex={0}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                      />
+                    </svg>
+                  </button>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    Save to notes
+                  </span>
+                </div>
               </>
             )}
           </div>

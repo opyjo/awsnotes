@@ -18,13 +18,17 @@ export interface Flashcard {
 }
 
 export const generateFlashcards = async (
-  noteContent: string
+  noteContent: string,
+  count: number = 5
 ): Promise<Flashcard[]> => {
   if (!openai) {
     throw new Error("OpenAI API key is not configured");
   }
 
-  const prompt = `Given this AWS study note content, generate 5 flashcards in Q&A format.
+  // Validate count
+  const flashcardCount = Math.max(1, Math.min(20, count)); // Clamp between 1 and 20
+
+  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards in Q&A format.
 Focus on key concepts, services, and exam-relevant details.
 Return ONLY a valid JSON array with this exact format:
 [
@@ -36,6 +40,9 @@ Note content:
 ${noteContent.substring(0, 3000)}`;
 
   try {
+    // Adjust max_tokens based on count (roughly 300 tokens per flashcard)
+    const maxTokens = Math.min(4000, Math.max(1000, flashcardCount * 300));
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -50,7 +57,7 @@ ${noteContent.substring(0, 3000)}`;
         },
       ],
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: maxTokens,
     });
 
     const content = completion.choices[0]?.message?.content;

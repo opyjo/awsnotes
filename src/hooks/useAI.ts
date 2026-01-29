@@ -5,7 +5,7 @@ import { getAuthToken } from "@/lib/aws/cognito";
 import type { Flashcard } from "@/lib/openai";
 
 interface UseAIResult {
-  generateFlashcards: (noteContent: string) => Promise<Flashcard[]>;
+  generateFlashcards: (noteContent: string, count?: number) => Promise<Flashcard[]>;
   explainConcept: (concept: string, context?: string) => Promise<string>;
   summarizeNote: (noteContent: string) => Promise<string>;
   loading: boolean;
@@ -17,7 +17,8 @@ export const useAI = (): UseAIResult => {
   const [error, setError] = useState<string | null>(null);
 
   const generateFlashcards = async (
-    noteContent: string
+    noteContent: string,
+    count: number = 5
   ): Promise<Flashcard[]> => {
     setLoading(true);
     setError(null);
@@ -30,7 +31,7 @@ export const useAI = (): UseAIResult => {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ noteContent }),
+        body: JSON.stringify({ noteContent, count }),
       });
 
       if (!response.ok) {
