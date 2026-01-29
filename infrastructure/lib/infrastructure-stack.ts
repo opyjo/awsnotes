@@ -182,7 +182,7 @@ export class AwsStudyNotesStack extends cdk.Stack {
           "query": {
             "expression": "PK = :userId AND begins_with(SK, :notePrefix)",
             "expressionValues": {
-              ":userId": { "S": "$ctx.identity.sub" },
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
               ":notePrefix": { "S": "NOTE#" }
             }
           }
@@ -196,12 +196,13 @@ export class AwsStudyNotesStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'getNote',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($noteId = $ctx.arguments.noteId)
         {
           "version": "2017-02-28",
           "operation": "GetItem",
           "key": {
-            "PK": { "S": "$ctx.identity.sub" },
-            "SK": { "S": "NOTE#$ctx.arguments.noteId" }
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("NOTE#$noteId")
           }
         }
       `),
@@ -215,27 +216,28 @@ export class AwsStudyNotesStack extends cdk.Stack {
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
         #set($noteId = $util.autoId())
         #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
         {
           "version": "2017-02-28",
           "operation": "PutItem",
           "key": {
-            "PK": { "S": "$ctx.identity.sub" },
-            "SK": { "S": "NOTE#$noteId" }
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("NOTE#$noteId")
           },
           "attributeValues": {
-            "noteId": { "S": "$noteId" },
-            "title": { "S": "$ctx.arguments.input.title" },
-            "content": { "S": "$ctx.arguments.input.content" },
-            "createdAt": { "S": "$now" },
-            "updatedAt": { "S": "$now" }
-            #if($ctx.arguments.input.category)
-            ,"category": { "S": "$ctx.arguments.input.category" }
+            "noteId": $util.dynamodb.toDynamoDBJson($noteId),
+            "title": $util.dynamodb.toDynamoDBJson($input.title),
+            "content": $util.dynamodb.toDynamoDBJson($input.content),
+            "createdAt": $util.dynamodb.toDynamoDBJson($now),
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.category)
+            ,"category": $util.dynamodb.toDynamoDBJson($input.category)
             #end
-            #if($ctx.arguments.input.tags)
-            ,"tags": $util.dynamodb.toListJson($ctx.arguments.input.tags)
+            #if($input.tags)
+            ,"tags": $util.dynamodb.toDynamoDBJson($input.tags)
             #end
-            #if($ctx.arguments.input.images)
-            ,"images": $util.dynamodb.toListJson($ctx.arguments.input.images)
+            #if($input.images)
+            ,"images": $util.dynamodb.toDynamoDBJson($input.images)
             #end
           }
         }
@@ -243,62 +245,35 @@ export class AwsStudyNotesStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.fromString('$util.toJson($ctx.result)'),
     });
 
-    // updateNote
+    // updateNote - simplified version that always updates title and content
     notesDs.createResolver('UpdateNoteResolver', {
       typeName: 'Mutation',
       fieldName: 'updateNote',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        #set($now = $util.time.nowISO8601())
-        #set($expNames = {})
-        #set($expValues = {})
-        #set($expSet = {})
-        
-        $util.qr($expSet.put("updatedAt", ":now"))
-        $util.qr($expValues.put(":now", $util.dynamodb.toDynamoDB($now)))
-        
-        #if($ctx.arguments.input.title)
-          $util.qr($expSet.put("title", ":title"))
-          $util.qr($expValues.put(":title", $util.dynamodb.toDynamoDB($ctx.arguments.input.title)))
-        #end
-        #if($ctx.arguments.input.content)
-          $util.qr($expSet.put("content", ":content"))
-          $util.qr($expValues.put(":content", $util.dynamodb.toDynamoDB($ctx.arguments.input.content)))
-        #end
-        #if($ctx.arguments.input.category)
-          $util.qr($expSet.put("category", ":category"))
-          $util.qr($expValues.put(":category", $util.dynamodb.toDynamoDB($ctx.arguments.input.category)))
-        #end
-        #if($ctx.arguments.input.tags)
-          $util.qr($expSet.put("tags", ":tags"))
-          $util.qr($expValues.put(":tags", $util.dynamodb.toDynamoDB($ctx.arguments.input.tags)))
-        #end
-        #if($ctx.arguments.input.images)
-          $util.qr($expSet.put("images", ":images"))
-          $util.qr($expValues.put(":images", $util.dynamodb.toDynamoDB($ctx.arguments.input.images)))
-        #end
-        
-        #set($expression = "SET")
-        #foreach($entry in $expSet.entrySet())
-          #set($expression = "$expression $entry.key = $entry.value")
-          #if($foreach.hasNext)
-            #set($expression = "$expression,")
-          #end
-        #end
-        
-        {
-          "version": "2017-02-28",
-          "operation": "UpdateItem",
-          "key": {
-            "PK": { "S": "$ctx.identity.sub" },
-            "SK": { "S": "NOTE#$ctx.arguments.noteId" }
-          },
-          "update": {
-            "expression": "$expression",
-            "expressionValues": $util.toJson($expValues)
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString('$util.toJson($ctx.result)'),
+      requestMappingTemplate: appsync.MappingTemplate.fromString(
+`{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "SK": $util.dynamodb.toDynamoDBJson("NOTE#$ctx.arguments.noteId")
+  },
+  "update": {
+    "expression": "SET updatedAt = :now, title = :title, content = :content, category = :category, tags = :tags",
+    "expressionValues": {
+      ":now": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
+      ":title": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.title),
+      ":content": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.content),
+      ":category": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrEmpty($ctx.arguments.input.category, "")),
+      ":tags": $util.dynamodb.toDynamoDBJson($util.defaultIfNull($ctx.arguments.input.tags, []))
+    }
+  }
+}`
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+`#set($result = $ctx.result)
+#set($result.noteId = $ctx.arguments.noteId)
+$util.toJson($result)`
+      ),
     });
 
     // deleteNote
@@ -306,12 +281,13 @@ export class AwsStudyNotesStack extends cdk.Stack {
       typeName: 'Mutation',
       fieldName: 'deleteNote',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($noteId = $ctx.arguments.noteId)
         {
           "version": "2017-02-28",
           "operation": "DeleteItem",
           "key": {
-            "PK": { "S": "$ctx.identity.sub" },
-            "SK": { "S": "NOTE#$ctx.arguments.noteId" }
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("NOTE#$noteId")
           }
         }
       `),
@@ -327,20 +303,21 @@ export class AwsStudyNotesStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'getFlashcards',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($deckId = $ctx.arguments.deckId)
         {
           "version": "2017-02-28",
           "operation": "Query",
           "query": {
             "expression": "PK = :userId AND begins_with(SK, :cardPrefix)",
             "expressionValues": {
-              ":userId": { "S": "$ctx.identity.sub" },
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
               ":cardPrefix": { "S": "CARD#" }
             }
           },
           "filter": {
             "expression": "deckId = :deckId",
             "expressionValues": {
-              ":deckId": { "S": "$ctx.arguments.deckId" }
+              ":deckId": $util.dynamodb.toDynamoDBJson($deckId)
             }
           }
         }
@@ -353,6 +330,7 @@ export class AwsStudyNotesStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'getDueFlashcards',
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($now = $util.time.nowISO8601())
         {
           "version": "2017-02-28",
           "operation": "Query",
@@ -360,8 +338,8 @@ export class AwsStudyNotesStack extends cdk.Stack {
           "query": {
             "expression": "PK = :userId AND nextReviewDate <= :now",
             "expressionValues": {
-              ":userId": { "S": "$ctx.identity.sub" },
-              ":now": { "S": "$util.time.nowISO8601()" }
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+              ":now": $util.dynamodb.toDynamoDBJson($now)
             }
           }
         }
@@ -376,25 +354,26 @@ export class AwsStudyNotesStack extends cdk.Stack {
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
         #set($cardId = $util.autoId())
         #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
         {
           "version": "2017-02-28",
           "operation": "PutItem",
           "key": {
-            "PK": { "S": "$ctx.identity.sub" },
-            "SK": { "S": "CARD#$cardId" }
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("CARD#$cardId")
           },
           "attributeValues": {
-            "cardId": { "S": "$cardId" },
-            "deckId": { "S": "$ctx.arguments.input.deckId" },
-            "front": { "S": "$ctx.arguments.input.front" },
-            "back": { "S": "$ctx.arguments.input.back" },
+            "cardId": $util.dynamodb.toDynamoDBJson($cardId),
+            "deckId": $util.dynamodb.toDynamoDBJson($input.deckId),
+            "front": $util.dynamodb.toDynamoDBJson($input.front),
+            "back": $util.dynamodb.toDynamoDBJson($input.back),
             "easeFactor": { "N": "2.5" },
             "interval": { "N": "0" },
             "repetitions": { "N": "0" },
-            "nextReviewDate": { "S": "$now" },
-            "createdAt": { "S": "$now" }
-            #if($ctx.arguments.input.noteId)
-            ,"noteId": { "S": "$ctx.arguments.input.noteId" }
+            "nextReviewDate": $util.dynamodb.toDynamoDBJson($now),
+            "createdAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.noteId)
+            ,"noteId": $util.dynamodb.toDynamoDBJson($input.noteId)
             #end
           }
         }

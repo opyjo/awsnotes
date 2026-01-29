@@ -4,12 +4,20 @@ import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 
 const client = generateClient();
 
-// Helper to extract data from GraphQL response
-const getData = <T>(response: GraphQLResult<T>): T => {
-  if ('data' in response && response.data) {
-    return response.data;
+// Helper to handle GraphQL errors
+const handleGraphQLResponse = <T>(response: GraphQLResult<T>, operationName: string): T => {
+  // Check for GraphQL errors
+  if (response.errors && response.errors.length > 0) {
+    const errorMessages = response.errors.map(e => e.message).join(", ");
+    console.error(`GraphQL errors in ${operationName}:`, response.errors);
+    throw new Error(errorMessages);
   }
-  throw new Error('No data in GraphQL response');
+  
+  if (!response.data) {
+    throw new Error(`No data returned from ${operationName}`);
+  }
+  
+  return response.data;
 };
 
 const GET_NOTES = `
@@ -148,45 +156,75 @@ const REVIEW_FLASHCARD = `
 
 export const notesApi = {
   getNotes: async (): Promise<Note[]> => {
-    const response = await client.graphql({
-      query: GET_NOTES,
-    }) as GraphQLResult<{ getNotes: Note[] }>;
-    return response.data?.getNotes || [];
+    try {
+      const response = await client.graphql({
+        query: GET_NOTES,
+      }) as GraphQLResult<{ getNotes: Note[] }>;
+      const data = handleGraphQLResponse(response, "getNotes");
+      return data.getNotes || [];
+    } catch (error: any) {
+      console.error("getNotes error:", error);
+      throw error;
+    }
   },
 
   getNote: async (noteId: string): Promise<Note | null> => {
-    const response = await client.graphql({
-      query: GET_NOTE,
-      variables: { noteId },
-    }) as GraphQLResult<{ getNote: Note | null }>;
-    return response.data?.getNote || null;
+    try {
+      const response = await client.graphql({
+        query: GET_NOTE,
+        variables: { noteId },
+      }) as GraphQLResult<{ getNote: Note | null }>;
+      const data = handleGraphQLResponse(response, "getNote");
+      return data.getNote || null;
+    } catch (error: any) {
+      console.error("getNote error:", error);
+      throw error;
+    }
   },
 
   createNote: async (input: CreateNoteInput): Promise<Note> => {
-    const response = await client.graphql({
-      query: CREATE_NOTE,
-      variables: { input },
-    }) as GraphQLResult<{ createNote: Note }>;
-    return response.data!.createNote;
+    try {
+      const response = await client.graphql({
+        query: CREATE_NOTE,
+        variables: { input },
+      }) as GraphQLResult<{ createNote: Note }>;
+      const data = handleGraphQLResponse(response, "createNote");
+      return data.createNote;
+    } catch (error: any) {
+      console.error("createNote error:", error);
+      throw error;
+    }
   },
 
   updateNote: async (
     noteId: string,
     input: UpdateNoteInput
   ): Promise<Note> => {
-    const response = await client.graphql({
-      query: UPDATE_NOTE,
-      variables: { noteId, input },
-    }) as GraphQLResult<{ updateNote: Note }>;
-    return response.data!.updateNote;
+    try {
+      const response = await client.graphql({
+        query: UPDATE_NOTE,
+        variables: { noteId, input },
+      }) as GraphQLResult<{ updateNote: Note }>;
+      const data = handleGraphQLResponse(response, "updateNote");
+      return data.updateNote;
+    } catch (error: any) {
+      console.error("updateNote error:", error);
+      throw error;
+    }
   },
 
   deleteNote: async (noteId: string): Promise<boolean> => {
-    const response = await client.graphql({
-      query: DELETE_NOTE,
-      variables: { noteId },
-    }) as GraphQLResult<{ deleteNote: boolean }>;
-    return response.data?.deleteNote ?? false;
+    try {
+      const response = await client.graphql({
+        query: DELETE_NOTE,
+        variables: { noteId },
+      }) as GraphQLResult<{ deleteNote: boolean }>;
+      const data = handleGraphQLResponse(response, "deleteNote");
+      return data.deleteNote ?? false;
+    } catch (error: any) {
+      console.error("deleteNote error:", error);
+      throw error;
+    }
   },
 };
 

@@ -47,8 +47,8 @@ export const BottomNav = () => {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t safe-area-bottom">
-      <div className="flex items-center justify-around h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 safe-area-bottom shadow-lg">
+      <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== "/flashcards/review" && pathname.startsWith(item.href + "/"));
@@ -58,14 +58,32 @@ export const BottomNav = () => {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full transition-colors",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                "relative flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 rounded-lg",
+                "hover:bg-accent/50 active:scale-95",
+                isActive && "text-primary"
               )}
             >
-              {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
+              {isActive && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-primary rounded-b-full" />
+              )}
+              <div
+                className={cn(
+                  "transition-all duration-200",
+                  isActive
+                    ? "scale-110"
+                    : "text-muted-foreground scale-100"
+                )}
+              >
+                {item.icon}
+              </div>
+              <span
+                className={cn(
+                  "text-xs mt-1 font-medium transition-colors duration-200",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}

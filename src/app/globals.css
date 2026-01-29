@@ -82,6 +82,7 @@ body {
 /* TipTap Editor Styles */
 .ProseMirror {
   outline: none;
+  font-size: 0.75rem; /* 12px - really small default text */
 }
 
 .ProseMirror h1 {
@@ -108,6 +109,7 @@ body {
 .ProseMirror p {
   margin-top: 1em;
   margin-bottom: 1em;
+  font-size: 0.75rem; /* 12px - really small default text */
 }
 
 .ProseMirror ul,
@@ -195,6 +197,17 @@ body {
   }
 }
 
+@keyframes slide-in-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes flip {
   0% {
     transform: rotateY(0deg);
@@ -210,6 +223,11 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s ease-out forwards;
+  opacity: 0;
 }
 
 /* Flashcard 3D flip */

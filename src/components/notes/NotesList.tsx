@@ -117,7 +117,7 @@ export const NotesList = () => {
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredNotes.map((note) => (
             <NoteCard key={note.noteId} note={note} onDelete={handleDelete} />
           ))}
