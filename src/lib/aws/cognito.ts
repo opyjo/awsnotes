@@ -6,7 +6,7 @@ import {
   fetchAuthSession,
 } from "aws-amplify/auth";
 import type { User } from "@/types/user";
-import amplifyConfig from "./amplify-config";
+import { amplifyConfig } from "@/components/providers/AmplifyProvider";
 
 // Map Cognito error codes to user-friendly messages
 const getAuthErrorMessage = (error: any): string => {

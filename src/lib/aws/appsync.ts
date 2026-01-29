@@ -2,7 +2,10 @@ import { generateClient, GraphQLResult } from "aws-amplify/api";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 
-const client = generateClient();
+// Generate client with userPool auth mode
+const client = generateClient({
+  authMode: "userPool",
+});
 
 // Helper to handle GraphQL errors
 const handleGraphQLResponse = <T>(
@@ -166,7 +169,13 @@ export const notesApi = {
       const data = handleGraphQLResponse(response, "getNotes");
       return data.getNotes || [];
     } catch (error: any) {
-      console.error("getNotes error:", error);
+      console.error("getNotes error:", {
+        message: error?.message,
+        name: error?.name,
+        errors: error?.errors,
+        data: error?.data,
+        full: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
       throw error;
     }
   },
