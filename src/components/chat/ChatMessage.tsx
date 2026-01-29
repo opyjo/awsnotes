@@ -247,9 +247,8 @@ const renderMarkdown = (content: string) => {
     const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
     if (headerMatch) {
       flushList();
-      const level = headerMatch[1].length;
+      const level = headerMatch[1].length as 1 | 2 | 3 | 4 | 5 | 6;
       const text = headerMatch[2];
-      const HeaderTag = `h${level}` as keyof JSX.IntrinsicElements;
       const headerClasses: Record<number, string> = {
         1: "text-lg font-bold mt-4 mb-3 text-foreground",
         2: "text-base font-bold mt-3 mb-2 text-foreground border-b border-border pb-1",
@@ -258,10 +257,14 @@ const renderMarkdown = (content: string) => {
         5: "text-xs font-semibold mt-2 mb-1 text-foreground",
         6: "text-xs font-medium mt-2 mb-1 text-muted-foreground",
       };
+      const className = headerClasses[level];
       elements.push(
-        <HeaderTag key={elements.length} className={headerClasses[level]}>
-          {renderInlineMarkdown(text)}
-        </HeaderTag>
+        level === 1 ? <h1 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h1> :
+        level === 2 ? <h2 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h2> :
+        level === 3 ? <h3 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h3> :
+        level === 4 ? <h4 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h4> :
+        level === 5 ? <h5 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h5> :
+        <h6 key={elements.length} className={className}>{renderInlineMarkdown(text)}</h6>
       );
       i++;
       continue;
