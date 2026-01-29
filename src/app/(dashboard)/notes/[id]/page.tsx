@@ -151,10 +151,19 @@ const EditNoteForm = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Sticky Header with Save Button */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/30 py-3 mb-6 animate-slide-in-up">
+      <div
+        className={cn(
+          "sticky top-0 z-50 mb-6",
+          "bg-background/95 backdrop-blur-lg backdrop-saturate-150",
+          "border border-border/60 rounded-lg",
+          "shadow-lg shadow-black/5 dark:shadow-black/20",
+          "px-5 py-4",
+          "transition-all duration-200"
+        )}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-md bg-muted/50 border border-border/40">
+            <div className="p-1.5 rounded-lg bg-muted/60 border border-border/50 shadow-sm">
               <svg
                 className="w-4 h-4 text-muted-foreground"
                 fill="none"
@@ -170,17 +179,17 @@ const EditNoteForm = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-base font-medium text-foreground/80">
+              <h1 className="text-base font-semibold text-foreground">
                 Edit Note
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="ghost"
               onClick={() => router.back()}
-              className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 h-9 px-3"
+              className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200 h-9 px-3"
             >
               Cancel
             </Button>
@@ -188,7 +197,7 @@ const EditNoteForm = () => {
               type="button"
               variant="ghost"
               onClick={handleDelete}
-              className="text-sm text-muted-foreground/80 hover:text-destructive/70 hover:bg-destructive/5 transition-all duration-200 h-9 px-3"
+              className="text-sm text-muted-foreground/80 hover:text-destructive hover:bg-destructive/10 transition-all duration-200 h-9 px-3"
             >
               <svg
                 className="w-3.5 h-3.5 mr-1.5"
@@ -212,8 +221,9 @@ const EditNoteForm = () => {
               variant="secondary"
               className={cn(
                 "min-w-[130px] h-9 px-4 text-sm font-medium transition-all duration-200",
-                "bg-muted/60 hover:bg-muted text-foreground/80 hover:text-foreground",
-                "border border-border/40 hover:border-border/60",
+                "bg-muted/80 hover:bg-muted text-foreground hover:text-foreground",
+                "border border-border/50 hover:border-border/70",
+                "shadow-sm hover:shadow-md",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
