@@ -151,12 +151,12 @@ const EditNoteForm = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Sticky Header with Save Button */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 py-4 mb-6 animate-slide-in-up shadow-sm">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/30 py-3 mb-6 animate-slide-in-up">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-muted/50 border border-border/40">
               <svg
-                className="w-5 h-5 text-primary"
+                className="w-4 h-4 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -170,17 +170,17 @@ const EditNoteForm = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              <h1 className="text-base font-medium text-foreground/80">
                 Edit Note
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               type="button"
               variant="ghost"
               onClick={() => router.back()}
-              className="transition-all duration-200 hover:bg-muted"
+              className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 h-9 px-3"
             >
               Cancel
             </Button>
@@ -188,10 +188,10 @@ const EditNoteForm = () => {
               type="button"
               variant="ghost"
               onClick={handleDelete}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+              className="text-sm text-muted-foreground/80 hover:text-destructive/70 hover:bg-destructive/5 transition-all duration-200 h-9 px-3"
             >
               <svg
-                className="w-4 h-4 mr-2"
+                className="w-3.5 h-3.5 mr-1.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -209,16 +209,18 @@ const EditNoteForm = () => {
               type="submit"
               form="edit-note-form"
               disabled={saving}
+              variant="secondary"
               className={cn(
-                "min-w-[140px] h-10 px-6 transition-all duration-200",
-                "hover:shadow-lg hover:shadow-primary/20",
+                "min-w-[130px] h-9 px-4 text-sm font-medium transition-all duration-200",
+                "bg-muted/60 hover:bg-muted text-foreground/80 hover:text-foreground",
+                "border border-border/40 hover:border-border/60",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
               {saving ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5">
                   <svg
-                    className="animate-spin h-4 w-4"
+                    className="animate-spin h-3.5 w-3.5"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -240,9 +242,9 @@ const EditNoteForm = () => {
                   Saving...
                 </span>
               ) : (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5">
                   <svg
-                    className="w-4 h-4"
+                    className="w-3.5 h-3.5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

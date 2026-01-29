@@ -132,7 +132,7 @@ body {
 /* TipTap Editor Styles */
 .ProseMirror {
   outline: none;
-  font-size: 0.75rem; /* 12px - really small default text */
+  font-size: 0.875rem; /* 14px */
 }
 
 .ProseMirror h1 {
@@ -159,7 +159,7 @@ body {
 .ProseMirror p {
   margin-top: 1em;
   margin-bottom: 1em;
-  font-size: 0.75rem; /* 12px - really small default text */
+  font-size: 0.875rem; /* 14px */
 }
 
 .ProseMirror ul,
