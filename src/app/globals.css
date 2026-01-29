@@ -79,6 +79,56 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Subtle background patterns */
+.bg-pattern-dots {
+  background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-pattern-grid {
+  background-image: 
+    linear-gradient(hsl(var(--border) / 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-gradient-subtle {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 50%,
+    hsl(var(--background)) 100%
+  );
+}
+
+.bg-gradient-blue {
+  background: linear-gradient(
+    135deg,
+    rgb(239 246 255 / 0.4) 0%,
+    rgb(219 234 254 / 0.3) 50%,
+    rgb(239 246 255 / 0.4) 100%
+  );
+}
+
+.dark .bg-gradient-blue {
+  background: linear-gradient(
+    135deg,
+    rgb(30 58 138 / 0.3) 0%,
+    rgb(30 64 175 / 0.2) 50%,
+    rgb(30 58 138 / 0.3) 100%
+  );
+}
+
+.dark .bg-pattern-dots {
+  background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.15) 1px, transparent 1px);
+}
+
+.dark .bg-pattern-grid {
+  background-image: 
+    linear-gradient(hsl(var(--border) / 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.15) 1px, transparent 1px);
+}
+
 /* TipTap Editor Styles */
 .ProseMirror {
   outline: none;

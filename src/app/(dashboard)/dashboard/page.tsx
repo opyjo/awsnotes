@@ -41,7 +41,12 @@ const DashboardContent = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Welcome back! Here's your study overview.</p>
+        </div>
       </div>
 
       <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3">

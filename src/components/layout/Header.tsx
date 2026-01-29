@@ -12,6 +12,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/notes", label: "Notes" },
   { href: "/flashcards", label: "Flashcards" },
+  { href: "/chat", label: "AI Tutor" },
 ];
 
 export const Header = () => {
@@ -25,7 +26,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/50 bg-background/95 backdrop-blur-sm shadow-sm">
+    <header className="sticky top-0 z-30 border-b border-border/50 bg-background/95 backdrop-blur-md shadow-sm bg-gradient-to-r from-blue-50/30 via-background to-blue-100/20 dark:from-blue-950/20 dark:via-background dark:to-blue-900/10">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <MobileMenu />
