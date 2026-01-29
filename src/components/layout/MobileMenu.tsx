@@ -11,7 +11,12 @@ const navItems = [
     href: "/dashboard",
     label: "Dashboard",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -25,7 +30,12 @@ const navItems = [
     href: "/notes",
     label: "Notes",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -39,7 +49,12 @@ const navItems = [
     href: "/flashcards",
     label: "Flashcards",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -65,7 +80,12 @@ export const MobileMenu = () => {
         aria-label="Toggle menu"
       >
         {open ? (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -74,7 +94,12 @@ export const MobileMenu = () => {
             />
           </svg>
         ) : (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -93,7 +118,7 @@ export const MobileMenu = () => {
           <nav
             className={cn(
               "fixed top-16 left-0 right-0 bg-background/95 backdrop-blur-md border-b border-border/50 z-50 p-4 space-y-2 shadow-lg",
-              "animate-slide-in"
+              "animate-slide-in",
             )}
           >
             {navItems.map((item, index) => {
@@ -109,14 +134,14 @@ export const MobileMenu = () => {
                     "hover:bg-accent/50 hover:translate-x-1",
                     isActive
                       ? "bg-gradient-to-r from-primary/10 to-primary/5 text-primary shadow-sm shadow-primary/10"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <span
                     className={cn(
                       "transition-colors duration-200",
-                      isActive ? "text-primary" : "text-muted-foreground"
+                      isActive ? "text-primary" : "text-muted-foreground",
                     )}
                   >
                     {item.icon}

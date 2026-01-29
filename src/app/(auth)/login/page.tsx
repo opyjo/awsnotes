@@ -7,7 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 
 export default function LoginPage() {
@@ -40,9 +46,12 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err: any) {
       const errorMessage = err.message || "Failed to sign in";
-      
+
       // Check if already signed in
-      if (errorMessage.includes("already a signed in user") || errorMessage.includes("already signed in")) {
+      if (
+        errorMessage.includes("already a signed in user") ||
+        errorMessage.includes("already signed in")
+      ) {
         addToast({
           type: "info",
           message: "You're already signed in! Redirecting...",
@@ -50,11 +59,14 @@ export default function LoginPage() {
         router.push("/dashboard");
         return;
       }
-      
+
       setError(errorMessage);
-      
+
       // Check if user needs to verify email
-      if (err.code === "UserNotConfirmedException" || errorMessage.includes("verify")) {
+      if (
+        err.code === "UserNotConfirmedException" ||
+        errorMessage.includes("verify")
+      ) {
         addToast({
           type: "warning",
           title: "Email not verified",
@@ -77,7 +89,9 @@ export default function LoginPage() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
-        <CardDescription>Sign in to your AWS Study Notes account</CardDescription>
+        <CardDescription>
+          Sign in to your AWS Study Notes account
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,7 +121,7 @@ export default function LoginPage() {
             <div className="rounded-md bg-destructive/10 p-3 space-y-2">
               <p className="text-sm text-destructive">{error}</p>
               {error.includes("verify") && (
-                <Link 
+                <Link
                   href={`/verify?email=${encodeURIComponent(email)}`}
                   className="text-sm text-primary underline block"
                 >

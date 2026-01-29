@@ -25,23 +25,20 @@ export const EmptyState = ({
     <div
       className={cn(
         "flex flex-col items-center justify-center py-12 px-4 text-center",
-        className
+        className,
       )}
     >
-      {icon && (
-        <div className="mb-4 text-muted-foreground">{icon}</div>
-      )}
+      {icon && <div className="mb-4 text-muted-foreground">{icon}</div>}
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-muted-foreground mb-6 max-w-sm">{description}</p>
-      {action && (
-        action.href ? (
+      {action &&
+        (action.href ? (
           <Button asChild>
             <Link href={action.href}>{action.label}</Link>
           </Button>
         ) : (
           <Button onClick={action.onClick}>{action.label}</Button>
-        )
-      )}
+        ))}
     </div>
   );
 };

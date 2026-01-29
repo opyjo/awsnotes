@@ -80,9 +80,15 @@ interface ConfirmContextType {
   confirm: (options: ConfirmOptions) => Promise<boolean>;
 }
 
-const ConfirmContext = React.createContext<ConfirmContextType | undefined>(undefined);
+const ConfirmContext = React.createContext<ConfirmContextType | undefined>(
+  undefined,
+);
 
-export const ConfirmProvider = ({ children }: { children: React.ReactNode }) => {
+export const ConfirmProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [state, setState] = React.useState<{
     open: boolean;
     options: ConfirmOptions | null;
@@ -93,11 +99,14 @@ export const ConfirmProvider = ({ children }: { children: React.ReactNode }) => 
     resolve: null,
   });
 
-  const confirm = React.useCallback((options: ConfirmOptions): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setState({ open: true, options, resolve });
-    });
-  }, []);
+  const confirm = React.useCallback(
+    (options: ConfirmOptions): Promise<boolean> => {
+      return new Promise((resolve) => {
+        setState({ open: true, options, resolve });
+      });
+    },
+    [],
+  );
 
   const handleConfirm = () => {
     state.resolve?.(true);

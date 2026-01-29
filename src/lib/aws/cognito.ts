@@ -1,4 +1,10 @@
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession } from "aws-amplify/auth";
+import {
+  signIn,
+  signUp,
+  signOut,
+  getCurrentUser,
+  fetchAuthSession,
+} from "aws-amplify/auth";
 import type { User } from "@/types/user";
 import amplifyConfig from "./amplify-config";
 
@@ -18,7 +24,7 @@ const getAuthErrorMessage = (error: any): string => {
         return "Password does not meet requirements. It must be at least 8 characters.";
       }
       return "Invalid information provided. Please check your input.";
-    
+
     // Sign In errors
     case "UserNotFoundException":
       return "No account found with this email. Please check your email or sign up.";
@@ -32,7 +38,7 @@ const getAuthErrorMessage = (error: any): string => {
       return "You are not authorized to perform this action.";
     case "UserNotConfirmedException":
       return "Please verify your email before signing in. Check your inbox for the verification code.";
-    
+
     // Verification errors
     case "CodeMismatchException":
       return "Invalid verification code. Please check and try again.";
@@ -40,13 +46,13 @@ const getAuthErrorMessage = (error: any): string => {
       return "Verification code has expired. Please request a new one.";
     case "LimitExceededException":
       return "Too many attempts. Please wait a few minutes before trying again.";
-    
+
     // General errors
     case "NetworkError":
       return "Network error. Please check your internet connection.";
     case "UserUnAuthenticatedException":
       return "Please sign in to continue.";
-    
+
     default:
       // Return original message if no mapping found
       return errorMessage || "An unexpected error occurred. Please try again.";
@@ -55,13 +61,15 @@ const getAuthErrorMessage = (error: any): string => {
 
 const checkConfigured = () => {
   if (!amplifyConfig.isConfigured) {
-    throw new Error("Auth UserPool not configured. Please set up your AWS environment variables in .env.local");
+    throw new Error(
+      "Auth UserPool not configured. Please set up your AWS environment variables in .env.local",
+    );
   }
 };
 
 export class AuthError extends Error {
   code: string;
-  
+
   constructor(error: any) {
     const message = getAuthErrorMessage(error);
     super(message);
@@ -73,7 +81,7 @@ export class AuthError extends Error {
 export const handleSignUp = async (
   email: string,
   password: string,
-  username?: string
+  username?: string,
 ) => {
   checkConfigured();
   try {
@@ -123,7 +131,7 @@ export const getCurrentAuthUser = async (): Promise<User | null> => {
     const user = await getCurrentUser();
     // Ensure user has an active session
     await fetchAuthSession();
-    
+
     return {
       userId: user.userId,
       email: user.signInDetails?.loginId || "",

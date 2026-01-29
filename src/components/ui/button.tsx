@@ -4,8 +4,7 @@ import { cn } from "@/lib/utils";
 export type ButtonVariant = "default" | "outline" | "ghost" | "destructive";
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   asChild?: boolean;
@@ -30,7 +29,18 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "md", type = "button", asChild = false, children, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = "default",
+      size = "md",
+      type = "button",
+      asChild = false,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
     const classes = cn(
       "inline-flex items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
       variantClasses[variant],
@@ -40,18 +50,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children as React.ReactElement<any>, {
-        className: cn(classes, (children as React.ReactElement<any>).props.className),
+        className: cn(
+          classes,
+          (children as React.ReactElement<any>).props.className,
+        ),
         ref,
       });
     }
 
     return (
-      <button
-        ref={ref}
-        type={type}
-        className={classes}
-        {...props}
-      >
+      <button ref={ref} type={type} className={classes} {...props}>
         {children}
       </button>
     );

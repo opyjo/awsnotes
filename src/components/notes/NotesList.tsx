@@ -5,7 +5,11 @@ import { useNotes } from "@/context/NotesContext";
 import { NoteCard } from "./NoteCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EmptyState, EmptyNotesIcon, EmptySearchIcon } from "@/components/ui/empty-state";
+import {
+  EmptyState,
+  EmptyNotesIcon,
+  EmptySearchIcon,
+} from "@/components/ui/empty-state";
 import { NotesListSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -28,13 +32,14 @@ export const NotesList = () => {
   });
 
   const categories = Array.from(
-    new Set(notes.map((note) => note.category).filter(Boolean))
+    new Set(notes.map((note) => note.category).filter(Boolean)),
   ) as string[];
 
   const handleDelete = async (noteId: string) => {
     const confirmed = await confirm({
       title: "Delete Note",
-      description: "Are you sure you want to delete this note? This action cannot be undone.",
+      description:
+        "Are you sure you want to delete this note? This action cannot be undone.",
       confirmLabel: "Delete",
       cancelLabel: "Cancel",
       variant: "destructive",

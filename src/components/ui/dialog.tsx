@@ -9,7 +9,7 @@ interface DialogContextValue {
 }
 
 const DialogContext = React.createContext<DialogContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 export interface DialogProps {
@@ -57,11 +57,14 @@ export interface DialogTriggerProps {
 
 export const DialogTrigger = ({ children, asChild }: DialogTriggerProps) => {
   const { onOpenChange } = useDialogContext();
-  
+
   if (React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<{ onClick?: () => void }>, {
-      onClick: () => onOpenChange(true),
-    });
+    return React.cloneElement(
+      children as React.ReactElement<{ onClick?: () => void }>,
+      {
+        onClick: () => onOpenChange(true),
+      },
+    );
   }
 
   return (
@@ -75,32 +78,33 @@ export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement>
   children: React.ReactNode;
 }
 
-export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
-  ({ className, children, ...props }, ref) => {
-    const { open, onOpenChange } = useDialogContext();
+export const DialogContent = React.forwardRef<
+  HTMLDivElement,
+  DialogContentProps
+>(({ className, children, ...props }, ref) => {
+  const { open, onOpenChange } = useDialogContext();
 
-    if (!open) return null;
+  if (!open) return null;
 
-    return (
-      <>
-        <div
-          className="fixed inset-0 z-50 bg-black/50"
-          onClick={() => onOpenChange(false)}
-        />
-        <div
-          ref={ref}
-          className={cn(
-            "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </div>
-      </>
-    );
-  }
-);
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-black/50"
+        onClick={() => onOpenChange(false)}
+      />
+      <div
+        ref={ref}
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    </>
+  );
+});
 DialogContent.displayName = "DialogContent";
 
 export interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -110,42 +114,50 @@ export const DialogHeader = React.forwardRef<HTMLDivElement, DialogHeaderProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
+        className={cn(
+          "flex flex-col space-y-1.5 text-center sm:text-left",
+          className,
+        )}
         {...props}
       />
     );
-  }
+  },
 );
 DialogHeader.displayName = "DialogHeader";
 
 export interface DialogTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
 
-export const DialogTitle = React.forwardRef<HTMLHeadingElement, DialogTitleProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <h2
-        ref={ref}
-        className={cn("text-lg font-semibold leading-none tracking-tight", className)}
-        {...props}
-      />
-    );
-  }
-);
+export const DialogTitle = React.forwardRef<
+  HTMLHeadingElement,
+  DialogTitleProps
+>(({ className, ...props }, ref) => {
+  return (
+    <h2
+      ref={ref}
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 DialogTitle.displayName = "DialogTitle";
 
 export interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
 
-export const DialogDescription = React.forwardRef<HTMLParagraphElement, DialogDescriptionProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <p
-        ref={ref}
-        className={cn("text-sm text-muted-foreground", className)}
-        {...props}
-      />
-    );
-  }
-);
+export const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  DialogDescriptionProps
+>(({ className, ...props }, ref) => {
+  return (
+    <p
+      ref={ref}
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+});
 DialogDescription.displayName = "DialogDescription";
 
 export interface DialogFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -155,11 +167,14 @@ export const DialogFooter = React.forwardRef<HTMLDivElement, DialogFooterProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+        className={cn(
+          "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+          className,
+        )}
         {...props}
       />
     );
-  }
+  },
 );
 DialogFooter.displayName = "DialogFooter";
 
@@ -167,34 +182,35 @@ export interface DialogCloseProps extends React.ButtonHTMLAttributes<HTMLButtonE
   asChild?: boolean;
 }
 
-export const DialogClose = React.forwardRef<HTMLButtonElement, DialogCloseProps>(
-  ({ className, children, asChild, ...props }, ref) => {
-    const { onOpenChange } = useDialogContext();
-    
-    const handleClose = () => onOpenChange(false);
+export const DialogClose = React.forwardRef<
+  HTMLButtonElement,
+  DialogCloseProps
+>(({ className, children, asChild, ...props }, ref) => {
+  const { onOpenChange } = useDialogContext();
 
-    if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<any>, {
-        onClick: (e: React.MouseEvent) => {
-          handleClose();
-          // Call original onClick if exists
-          (children as React.ReactElement<any>).props.onClick?.(e);
-        },
-        ref,
-      });
-    }
-    
-    return (
-      <button
-        ref={ref}
-        type="button"
-        onClick={handleClose}
-        className={className}
-        {...props}
-      >
-        {children}
-      </button>
-    );
+  const handleClose = () => onOpenChange(false);
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        handleClose();
+        // Call original onClick if exists
+        (children as React.ReactElement<any>).props.onClick?.(e);
+      },
+      ref,
+    });
   }
-);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={handleClose}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+});
 DialogClose.displayName = "DialogClose";

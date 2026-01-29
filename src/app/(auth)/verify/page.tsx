@@ -7,7 +7,13 @@ import { confirmSignUp, resendSignUpCode } from "aws-amplify/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -47,18 +53,21 @@ const VerifyForm = () => {
       router.push("/login");
     } catch (err: any) {
       let errorMessage = err.message || "Failed to verify code";
-      
+
       // Map common Cognito errors
       if (err.name === "CodeMismatchException") {
         errorMessage = "Invalid verification code. Please check and try again.";
       } else if (err.name === "ExpiredCodeException") {
-        errorMessage = "Verification code has expired. Please request a new one.";
+        errorMessage =
+          "Verification code has expired. Please request a new one.";
       } else if (err.name === "LimitExceededException") {
-        errorMessage = "Too many attempts. Please wait a few minutes before trying again.";
+        errorMessage =
+          "Too many attempts. Please wait a few minutes before trying again.";
       } else if (err.name === "UserNotFoundException") {
-        errorMessage = "No account found with this email. Please sign up first.";
+        errorMessage =
+          "No account found with this email. Please sign up first.";
       }
-      
+
       setError(errorMessage);
       addToast({
         type: "error",
@@ -85,13 +94,15 @@ const VerifyForm = () => {
       });
     } catch (err: any) {
       let errorMessage = err.message || "Failed to resend code";
-      
+
       if (err.name === "LimitExceededException") {
-        errorMessage = "Too many attempts. Please wait a few minutes before trying again.";
+        errorMessage =
+          "Too many attempts. Please wait a few minutes before trying again.";
       } else if (err.name === "UserNotFoundException") {
-        errorMessage = "No account found with this email. Please sign up first.";
+        errorMessage =
+          "No account found with this email. Please sign up first.";
       }
-      
+
       setError(errorMessage);
       addToast({
         type: "error",

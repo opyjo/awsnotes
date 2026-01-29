@@ -7,7 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { SuccessIcon } from "@/components/ui/empty-state";
 
@@ -41,13 +47,14 @@ export default function RegisterPage() {
     } catch (err: any) {
       const errorMessage = err.message || "Failed to sign up";
       setError(errorMessage);
-      
+
       // Check if user already exists - offer helpful options
       if (err.code === "UsernameExistsException") {
         addToast({
           type: "warning",
           title: "Account exists",
-          message: "Try signing in or verifying your email if you haven't already.",
+          message:
+            "Try signing in or verifying your email if you haven't already.",
           duration: 8000,
         });
       } else {
@@ -71,7 +78,7 @@ export default function RegisterPage() {
             <div>
               <h2 className="text-xl font-semibold">Check your email</h2>
               <p className="text-muted-foreground mt-2">
-                We've sent a verification code to <strong>{email}</strong>. 
+                We've sent a verification code to <strong>{email}</strong>.
                 Please check your inbox and verify your account.
               </p>
             </div>
@@ -134,8 +141,8 @@ export default function RegisterPage() {
                     Sign in
                   </Link>
                   <span className="text-muted-foreground">or</span>
-                  <Link 
-                    href={`/verify?email=${encodeURIComponent(email)}`} 
+                  <Link
+                    href={`/verify?email=${encodeURIComponent(email)}`}
                     className="text-primary underline"
                   >
                     Verify email

@@ -217,6 +217,15 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
@@ -228,6 +237,10 @@ body {
 .animate-slide-in-up {
   animation: slide-in-up 0.4s ease-out forwards;
   opacity: 0;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
 }
 
 /* Flashcard 3D flip */

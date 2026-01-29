@@ -47,7 +47,7 @@ const CreateNoteForm = () => {
     } catch (err: any) {
       // Extract error message from various error formats
       let errorMessage = "Failed to create note";
-      
+
       if (err?.errors && Array.isArray(err.errors)) {
         // GraphQL errors
         errorMessage = err.errors.map((e: any) => e.message).join(", ");
@@ -56,7 +56,7 @@ const CreateNoteForm = () => {
       } else if (typeof err === "string") {
         errorMessage = err;
       }
-      
+
       console.error("Error creating note:", JSON.stringify(err, null, 2));
       setError(errorMessage);
       addToast({
@@ -73,8 +73,14 @@ const CreateNoteForm = () => {
     <div className="max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
         {/* Title Field */}
-        <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.1s" }}>
-          <Label htmlFor="title" className="flex items-center gap-2 text-sm font-semibold">
+        <div
+          className="space-y-3 animate-slide-in-up"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <Label
+            htmlFor="title"
+            className="flex items-center gap-2 text-sm font-semibold"
+          >
             <svg
               className="w-4 h-4 text-primary"
               fill="none"
@@ -104,8 +110,14 @@ const CreateNoteForm = () => {
         {/* Category and Tags Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Category Field */}
-          <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.2s" }}>
-            <Label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold">
+          <div
+            className="space-y-3 animate-slide-in-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <Label
+              htmlFor="category"
+              className="flex items-center gap-2 text-sm font-semibold"
+            >
               <svg
                 className="w-4 h-4 text-primary"
                 fill="none"
@@ -131,8 +143,14 @@ const CreateNoteForm = () => {
           </div>
 
           {/* Tags Field */}
-          <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.3s" }}>
-            <Label htmlFor="tags" className="flex items-center gap-2 text-sm font-semibold">
+          <div
+            className="space-y-3 animate-slide-in-up"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <Label
+              htmlFor="tags"
+              className="flex items-center gap-2 text-sm font-semibold"
+            >
               <svg
                 className="w-4 h-4 text-primary"
                 fill="none"
@@ -147,7 +165,9 @@ const CreateNoteForm = () => {
                 />
               </svg>
               Tags
-              <span className="text-xs font-normal text-muted-foreground">(comma-separated)</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                (comma-separated)
+              </span>
             </Label>
             <Input
               id="tags"
@@ -160,8 +180,14 @@ const CreateNoteForm = () => {
         </div>
 
         {/* Content Field */}
-        <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.4s" }}>
-          <Label htmlFor="content" className="flex items-center gap-2 text-sm font-semibold">
+        <div
+          className="space-y-3 animate-slide-in-up"
+          style={{ animationDelay: "0.4s" }}
+        >
+          <Label
+            htmlFor="content"
+            className="flex items-center gap-2 text-sm font-semibold"
+          >
             <svg
               className="w-4 h-4 text-primary"
               fill="none"
@@ -187,7 +213,7 @@ const CreateNoteForm = () => {
           <div
             className={cn(
               "rounded-lg bg-destructive/10 border border-destructive/20 p-4",
-              "animate-slide-in-up flex items-start gap-3"
+              "animate-slide-in-up flex items-start gap-3",
             )}
             style={{ animationDelay: "0.5s" }}
           >
@@ -209,7 +235,10 @@ const CreateNoteForm = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-border/50 animate-slide-in-up" style={{ animationDelay: "0.6s" }}>
+        <div
+          className="flex items-center justify-between pt-4 border-t border-border/50 animate-slide-in-up"
+          style={{ animationDelay: "0.6s" }}
+        >
           <Button
             type="button"
             variant="ghost"
@@ -237,7 +266,7 @@ const CreateNoteForm = () => {
             className={cn(
               "min-w-[140px] h-11 px-6 transition-all duration-200",
               "hover:shadow-lg hover:shadow-primary/20",
-              "disabled:opacity-50 disabled:cursor-not-allowed"
+              "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
             {saving ? (

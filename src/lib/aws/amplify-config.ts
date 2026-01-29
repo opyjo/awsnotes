@@ -33,13 +33,10 @@ if (userPoolId && userPoolClientId) {
 
   Amplify.configure(amplifyConfig);
 } else {
-  console.warn(
-    "AWS Amplify not configured. Missing environment variables:",
-    {
-      userPoolId: !!userPoolId,
-      userPoolClientId: !!userPoolClientId,
-    }
-  );
+  console.warn("AWS Amplify not configured. Missing environment variables:", {
+    userPoolId: !!userPoolId,
+    userPoolClientId: !!userPoolClientId,
+  });
 }
 
 export default {

@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { NotesProvider, useNotes } from "@/context/NotesContext";
 import { FlashcardsProvider, useFlashcards } from "@/context/FlashcardsContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, EmptyNotesIcon } from "@/components/ui/empty-state";
@@ -21,13 +27,16 @@ const DashboardContent = () => {
 
   const recentNotes = notes.slice(0, 5);
   const categories = Array.from(
-    new Set(notes.map((note) => note.category).filter(Boolean))
+    new Set(notes.map((note) => note.category).filter(Boolean)),
   ) as string[];
 
-  const categoryCounts = categories.reduce((acc, category) => {
-    acc[category] = notes.filter((note) => note.category === category).length;
-    return acc;
-  }, {} as Record<string, number>);
+  const categoryCounts = categories.reduce(
+    (acc, category) => {
+      acc[category] = notes.filter((note) => note.category === category).length;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   return (
     <div className="space-y-6">
@@ -39,10 +48,17 @@ const DashboardContent = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Notes</CardDescription>
-            <CardTitle className="text-3xl md:text-4xl">{notes.length}</CardTitle>
+            <CardTitle className="text-3xl md:text-4xl">
+              {notes.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="ghost" size="sm" className="px-0 text-primary">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="px-0 text-primary"
+            >
               <Link href="/notes">View all</Link>
             </Button>
           </CardContent>
@@ -51,7 +67,9 @@ const DashboardContent = () => {
         <Card className={dueFlashcards.length > 0 ? "border-primary" : ""}>
           <CardHeader className="pb-2">
             <CardDescription>Due for Review</CardDescription>
-            <CardTitle className="text-3xl md:text-4xl">{dueFlashcards.length}</CardTitle>
+            <CardTitle className="text-3xl md:text-4xl">
+              {dueFlashcards.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {dueFlashcards.length > 0 ? (
@@ -59,7 +77,9 @@ const DashboardContent = () => {
                 <Link href="/flashcards/review">Start Review</Link>
               </Button>
             ) : (
-              <span className="text-sm text-muted-foreground">All caught up!</span>
+              <span className="text-sm text-muted-foreground">
+                All caught up!
+              </span>
             )}
           </CardContent>
         </Card>
@@ -67,10 +87,14 @@ const DashboardContent = () => {
         <Card className="col-span-2 md:col-span-1">
           <CardHeader className="pb-2">
             <CardDescription>Categories</CardDescription>
-            <CardTitle className="text-3xl md:text-4xl">{categories.length}</CardTitle>
+            <CardTitle className="text-3xl md:text-4xl">
+              {categories.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-sm text-muted-foreground">AWS services covered</span>
+            <span className="text-sm text-muted-foreground">
+              AWS services covered
+            </span>
           </CardContent>
         </Card>
       </div>
@@ -133,7 +157,8 @@ const DashboardContent = () => {
             {categories.length === 0 ? (
               <div className="text-center py-6">
                 <p className="text-sm text-muted-foreground">
-                  No categories yet. Add categories to your notes to organize them by AWS service.
+                  No categories yet. Add categories to your notes to organize
+                  them by AWS service.
                 </p>
               </div>
             ) : (
@@ -150,7 +175,9 @@ const DashboardContent = () => {
                         <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full"
-                            style={{ width: `${(count / notes.length) * 100}%` }}
+                            style={{
+                              width: `${(count / notes.length) * 100}%`,
+                            }}
                           />
                         </div>
                         <span className="text-sm text-muted-foreground w-8 text-right">

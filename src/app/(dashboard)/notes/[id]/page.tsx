@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { NotesProvider, useNotes } from "@/context/NotesContext";
+import { FlashcardsProvider } from "@/context/FlashcardsContext";
 import { NoteEditor } from "@/components/notes/NoteEditor";
+import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +27,7 @@ const EditNoteForm = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
 
   useEffect(() => {
     const loadNote = async () => {
@@ -90,7 +93,8 @@ const EditNoteForm = () => {
   const handleDelete = async () => {
     const confirmed = await confirm({
       title: "Delete Note",
-      description: "Are you sure you want to delete this note? This action cannot be undone.",
+      description:
+        "Are you sure you want to delete this note? This action cannot be undone.",
       confirmLabel: "Delete",
       cancelLabel: "Cancel",
       variant: "destructive",
@@ -208,7 +212,7 @@ const EditNoteForm = () => {
               className={cn(
                 "min-w-[140px] h-10 px-6 transition-all duration-200",
                 "hover:shadow-lg hover:shadow-primary/20",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
+                "disabled:opacity-50 disabled:cursor-not-allowed",
               )}
             >
               {saving ? (
@@ -258,10 +262,20 @@ const EditNoteForm = () => {
         </div>
       </div>
 
-      <form id="edit-note-form" onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
+      <form
+        id="edit-note-form"
+        onSubmit={handleSubmit}
+        className="space-y-8 animate-fade-in"
+      >
         {/* Title Field */}
-        <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.1s" }}>
-          <Label htmlFor="title" className="flex items-center gap-2 text-sm font-semibold">
+        <div
+          className="space-y-3 animate-slide-in-up"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <Label
+            htmlFor="title"
+            className="flex items-center gap-2 text-sm font-semibold"
+          >
             <svg
               className="w-4 h-4 text-primary"
               fill="none"
@@ -291,8 +305,14 @@ const EditNoteForm = () => {
         {/* Category and Tags Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Category Field */}
-          <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.2s" }}>
-            <Label htmlFor="category" className="flex items-center gap-2 text-sm font-semibold">
+          <div
+            className="space-y-3 animate-slide-in-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <Label
+              htmlFor="category"
+              className="flex items-center gap-2 text-sm font-semibold"
+            >
               <svg
                 className="w-4 h-4 text-primary"
                 fill="none"
@@ -318,8 +338,14 @@ const EditNoteForm = () => {
           </div>
 
           {/* Tags Field */}
-          <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.3s" }}>
-            <Label htmlFor="tags" className="flex items-center gap-2 text-sm font-semibold">
+          <div
+            className="space-y-3 animate-slide-in-up"
+            style={{ animationDelay: "0.3s" }}
+          >
+            <Label
+              htmlFor="tags"
+              className="flex items-center gap-2 text-sm font-semibold"
+            >
               <svg
                 className="w-4 h-4 text-primary"
                 fill="none"
@@ -334,7 +360,9 @@ const EditNoteForm = () => {
                 />
               </svg>
               Tags
-              <span className="text-xs font-normal text-muted-foreground">(comma-separated)</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                (comma-separated)
+              </span>
             </Label>
             <Input
               id="tags"
@@ -347,8 +375,14 @@ const EditNoteForm = () => {
         </div>
 
         {/* Content Field */}
-        <div className="space-y-3 animate-slide-in-up" style={{ animationDelay: "0.4s" }}>
-          <Label htmlFor="content" className="flex items-center gap-2 text-sm font-semibold">
+        <div
+          className="space-y-3 animate-slide-in-up"
+          style={{ animationDelay: "0.4s" }}
+        >
+          <Label
+            htmlFor="content"
+            className="flex items-center gap-2 text-sm font-semibold"
+          >
             <svg
               className="w-4 h-4 text-primary"
               fill="none"
@@ -374,7 +408,7 @@ const EditNoteForm = () => {
           <div
             className={cn(
               "rounded-lg bg-destructive/10 border border-destructive/20 p-4",
-              "animate-slide-in-up flex items-start gap-3"
+              "animate-slide-in-up flex items-start gap-3",
             )}
             style={{ animationDelay: "0.5s" }}
           >
@@ -395,6 +429,16 @@ const EditNoteForm = () => {
           </div>
         )}
       </form>
+
+      <FlashcardsProvider>
+        <AIFlashcardGenerator
+          open={flashcardGeneratorOpen}
+          onOpenChange={setFlashcardGeneratorOpen}
+          noteId={noteId}
+          noteContent={content}
+          deckId="default"
+        />
+      </FlashcardsProvider>
     </div>
   );
 };

@@ -9,7 +9,12 @@ const navItems = [
     href: "/dashboard",
     label: "Dashboard",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -23,7 +28,12 @@ const navItems = [
     href: "/notes",
     label: "Notes",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -37,7 +47,12 @@ const navItems = [
     href: "/flashcards",
     label: "Flashcards",
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -57,7 +72,12 @@ export const Sidebar = () => {
       <div className="p-6 border-b border-border/50">
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 group-hover:border-primary/40 transition-all duration-200">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -76,7 +96,8 @@ export const Sidebar = () => {
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item, index) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
@@ -86,7 +107,7 @@ export const Sidebar = () => {
                 "hover:bg-accent/50 hover:translate-x-1",
                 isActive
                   ? "bg-gradient-to-r from-primary/10 to-primary/5 text-primary shadow-sm shadow-primary/10"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
@@ -96,7 +117,9 @@ export const Sidebar = () => {
               <span
                 className={cn(
                   "transition-colors duration-200",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-foreground",
                 )}
               >
                 {item.icon}
