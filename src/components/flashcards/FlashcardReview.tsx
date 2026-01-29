@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { ReactNode } from "react";
 import { useFlashcards } from "@/context/FlashcardsContext";
 import { FlashcardFlip } from "./FlashcardFlip";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ const ratingConfig: {
   label: string;
   shortcut: string;
   variant: "destructive" | "outline" | "default" | "secondary";
-  icon: JSX.Element;
+  icon: ReactNode;
   color: string;
 }[] = [
   {
