@@ -8,107 +8,105 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { groupsApi } from "@/lib/aws/appsync";
 import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
-
-const STORAGE_KEY = "aws-study-notes-groups";
 
 interface GroupsContextType {
   groups: Group[];
   loading: boolean;
+  error: string | null;
   selectedGroupId: string | null;
   sidebarCollapsed: boolean;
   setSelectedGroupId: (id: string | null) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  createGroup: (input: CreateGroupInput) => Group;
-  updateGroup: (id: string, input: UpdateGroupInput) => Group | null;
-  deleteGroup: (id: string) => void;
+  createGroup: (input: CreateGroupInput) => Promise<Group>;
+  updateGroup: (id: string, input: UpdateGroupInput) => Promise<Group | null>;
+  deleteGroup: (id: string) => Promise<void>;
   getGroupByName: (name: string) => Group | undefined;
   getGroupById: (id: string) => Group | undefined;
+  refreshGroups: () => Promise<void>;
 }
 
 const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
 
-const generateId = (): string => {
-  return crypto.randomUUID();
-};
+const SIDEBAR_STATE_KEY = "aws-study-notes-sidebar-collapsed";
 
 export const GroupsProvider = ({ children }: { children: React.ReactNode }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
 
-  // Load groups from localStorage on mount
+  // Load sidebar state from localStorage (UI preference only)
   useEffect(() => {
-    const loadGroups = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setGroups(parsed.groups || []);
-          setSidebarCollapsed(parsed.sidebarCollapsed || false);
-        }
-      } catch (error) {
-        console.error("Failed to load groups from localStorage:", error);
-      } finally {
-        setLoading(false);
+    try {
+      const stored = localStorage.getItem(SIDEBAR_STATE_KEY);
+      if (stored) {
+        setSidebarCollapsedState(JSON.parse(stored));
       }
-    };
-
-    loadGroups();
+    } catch (err) {
+      console.error("Failed to load sidebar state:", err);
+    }
   }, []);
 
-  // Save groups to localStorage whenever they change
-  useEffect(() => {
-    if (!loading) {
-      try {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ groups, sidebarCollapsed })
-        );
-      } catch (error) {
-        console.error("Failed to save groups to localStorage:", error);
-      }
+  // Save sidebar state to localStorage
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    setSidebarCollapsedState(collapsed);
+    try {
+      localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(collapsed));
+    } catch (err) {
+      console.error("Failed to save sidebar state:", err);
     }
-  }, [groups, sidebarCollapsed, loading]);
+  }, []);
 
-  const createGroup = useCallback((input: CreateGroupInput): Group => {
-    const newGroup: Group = {
-      id: generateId(),
-      name: input.name.trim(),
-      color: input.color,
-      createdAt: new Date().toISOString(),
-    };
+  // Fetch groups from backend
+  const fetchGroups = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const fetchedGroups = await groupsApi.getGroups();
+      setGroups(fetchedGroups);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch groups";
+      console.error("Failed to fetch groups:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  // Initial fetch
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  const refreshGroups = useCallback(async () => {
+    await fetchGroups();
+  }, [fetchGroups]);
+
+  const createGroup = useCallback(async (input: CreateGroupInput): Promise<Group> => {
+    const newGroup = await groupsApi.createGroup(input);
     setGroups((prev) => [...prev, newGroup]);
     return newGroup;
   }, []);
 
   const updateGroup = useCallback(
-    (id: string, input: UpdateGroupInput): Group | null => {
-      let updatedGroup: Group | null = null;
-
-      setGroups((prev) =>
-        prev.map((group) => {
-          if (group.id === id) {
-            updatedGroup = {
-              ...group,
-              ...(input.name !== undefined && { name: input.name.trim() }),
-              ...(input.color !== undefined && { color: input.color }),
-            };
-            return updatedGroup;
-          }
-          return group;
-        })
-      );
-
+    async (id: string, input: UpdateGroupInput): Promise<Group | null> => {
+      const updatedGroup = await groupsApi.updateGroup(id, input);
+      if (updatedGroup) {
+        setGroups((prev) =>
+          prev.map((group) => (group.id === id ? updatedGroup : group))
+        );
+      }
       return updatedGroup;
     },
     []
   );
 
   const deleteGroup = useCallback(
-    (id: string) => {
+    async (id: string) => {
+      await groupsApi.deleteGroup(id);
       setGroups((prev) => prev.filter((group) => group.id !== id));
       if (selectedGroupId === id) {
         setSelectedGroupId(null);
@@ -137,6 +135,7 @@ export const GroupsProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       groups,
       loading,
+      error,
       selectedGroupId,
       sidebarCollapsed,
       setSelectedGroupId,
@@ -146,17 +145,21 @@ export const GroupsProvider = ({ children }: { children: React.ReactNode }) => {
       deleteGroup,
       getGroupByName,
       getGroupById,
+      refreshGroups,
     }),
     [
       groups,
       loading,
+      error,
       selectedGroupId,
       sidebarCollapsed,
+      setSidebarCollapsed,
       createGroup,
       updateGroup,
       deleteGroup,
       getGroupByName,
       getGroupById,
+      refreshGroups,
     ]
   );
 

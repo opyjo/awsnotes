@@ -80,25 +80,26 @@ export const GroupModal = ({
     try {
       if (isEditing && group) {
         const oldName = group.name;
-        updateGroup(group.id, { name: trimmedName, color });
+        await updateGroup(group.id, { name: trimmedName, color });
 
         // If name changed, update all notes with the old category
         if (oldName !== trimmedName && onGroupChange) {
           await onGroupChange(oldName, trimmedName);
         }
       } else {
-        createGroup({ name: trimmedName, color });
+        await createGroup({ name: trimmedName, color });
       }
 
       onOpenChange(false);
     } catch (err) {
-      setError("Failed to save group");
+      console.error("Failed to save group:", err);
+      setError(err instanceof Error ? err.message : "Failed to save group");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!group) return;
 
     if (!confirmDelete) {
@@ -106,8 +107,16 @@ export const GroupModal = ({
       return;
     }
 
-    deleteGroup(group.id);
-    onOpenChange(false);
+    try {
+      setSaving(true);
+      await deleteGroup(group.id);
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Failed to delete group:", err);
+      setError(err instanceof Error ? err.message : "Failed to delete group");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

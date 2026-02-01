@@ -315,6 +315,133 @@ $util.toJson($result)`,
     });
 
     // ==========================================
+    // Resolvers for Groups (stored in NotesTable with GROUP# prefix)
+    // ==========================================
+
+    // getGroups
+    notesDs.createResolver("GetGroupsResolver", {
+      typeName: "Query",
+      fieldName: "getGroups",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "query": {
+            "expression": "PK = :userId AND begins_with(SK, :groupPrefix)",
+            "expressionValues": {
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+              ":groupPrefix": { "S": "GROUP#" }
+            }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result.items)",
+      ),
+    });
+
+    // getGroup
+    notesDs.createResolver("GetGroupResolver", {
+      typeName: "Query",
+      fieldName: "getGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($groupId = $ctx.arguments.groupId)
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("GROUP#$groupId")
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result)",
+      ),
+    });
+
+    // createGroup
+    notesDs.createResolver("CreateGroupResolver", {
+      typeName: "Mutation",
+      fieldName: "createGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($groupId = $util.autoId())
+        #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
+        {
+          "version": "2017-02-28",
+          "operation": "PutItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("GROUP#$groupId")
+          },
+          "attributeValues": {
+            "groupId": $util.dynamodb.toDynamoDBJson($groupId),
+            "name": $util.dynamodb.toDynamoDBJson($input.name),
+            "createdAt": $util.dynamodb.toDynamoDBJson($now),
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.color)
+            ,"color": $util.dynamodb.toDynamoDBJson($input.color)
+            #end
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result)",
+      ),
+    });
+
+    // updateGroup
+    notesDs.createResolver("UpdateGroupResolver", {
+      typeName: "Mutation",
+      fieldName: "updateGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(
+        `{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "SK": $util.dynamodb.toDynamoDBJson("GROUP#$ctx.arguments.groupId")
+  },
+  "update": {
+    "expression": "SET updatedAt = :now, #name = :name, color = :color",
+    "expressionNames": {
+      "#name": "name"
+    },
+    "expressionValues": {
+      ":now": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
+      ":name": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.name),
+      ":color": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrEmpty($ctx.arguments.input.color, ""))
+    }
+  }
+}`,
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#set($result = $ctx.result)
+#set($result.groupId = $ctx.arguments.groupId)
+$util.toJson($result)`,
+      ),
+    });
+
+    // deleteGroup
+    notesDs.createResolver("DeleteGroupResolver", {
+      typeName: "Mutation",
+      fieldName: "deleteGroup",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($groupId = $ctx.arguments.groupId)
+        {
+          "version": "2017-02-28",
+          "operation": "DeleteItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("GROUP#$groupId")
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString("true"),
+    });
+
+    // ==========================================
     // Resolvers for Flashcards
     // ==========================================
 

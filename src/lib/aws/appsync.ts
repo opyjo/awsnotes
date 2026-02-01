@@ -2,6 +2,7 @@ import { generateClient, GraphQLResult } from "aws-amplify/api";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
+import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
 
 // Define a simple client type to avoid TypeScript recursive depth issues
 type AmplifyClient = {
@@ -195,6 +196,64 @@ const REVIEW_FLASHCARD = `
   }
 `;
 
+// ==========================================
+// Groups Queries and Mutations
+// ==========================================
+
+const GET_GROUPS = `
+  query GetGroups {
+    getGroups {
+      groupId
+      name
+      color
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_GROUP = `
+  query GetGroup($groupId: ID!) {
+    getGroup(groupId: $groupId) {
+      groupId
+      name
+      color
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const CREATE_GROUP = `
+  mutation CreateGroup($input: CreateGroupInput!) {
+    createGroup(input: $input) {
+      groupId
+      name
+      color
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const UPDATE_GROUP = `
+  mutation UpdateGroup($groupId: ID!, $input: UpdateGroupInput!) {
+    updateGroup(groupId: $groupId, input: $input) {
+      groupId
+      name
+      color
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const DELETE_GROUP = `
+  mutation DeleteGroup($groupId: ID!) {
+    deleteGroup(groupId: $groupId)
+  }
+`;
+
 export const notesApi = {
   getNotes: async (): Promise<Note[]> => {
     const hasAuth = await checkAuthSession();
@@ -292,5 +351,77 @@ export const flashcardsApi = {
     }
     
     return response.data.reviewFlashcard;
+  },
+};
+
+// API response type with groupId instead of id
+interface GroupApiResponse {
+  groupId: string;
+  name: string;
+  color?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Transform API response to frontend Group type
+const transformGroup = (apiGroup: GroupApiResponse): Group => ({
+  id: apiGroup.groupId,
+  name: apiGroup.name,
+  color: apiGroup.color,
+  createdAt: apiGroup.createdAt,
+});
+
+export const groupsApi = {
+  getGroups: async (): Promise<Group[]> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+    
+    const response = (await getClient().graphql({
+      query: GET_GROUPS,
+    })) as GraphQLResult<{ getGroups: GroupApiResponse[] }>;
+    
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(response.errors[0]?.message || "GraphQL query failed");
+    }
+    
+    return (response.data?.getGroups || []).map(transformGroup);
+  },
+
+  getGroup: async (groupId: string): Promise<Group | null> => {
+    const response = (await getClient().graphql({
+      query: GET_GROUP,
+      variables: { groupId },
+    })) as GraphQLResult<{ getGroup: GroupApiResponse | null }>;
+    const data = handleGraphQLResponse(response, "getGroup");
+    return data.getGroup ? transformGroup(data.getGroup) : null;
+  },
+
+  createGroup: async (input: CreateGroupInput): Promise<Group> => {
+    const response = (await getClient().graphql({
+      query: CREATE_GROUP,
+      variables: { input },
+    })) as GraphQLResult<{ createGroup: GroupApiResponse }>;
+    const data = handleGraphQLResponse(response, "createGroup");
+    return transformGroup(data.createGroup);
+  },
+
+  updateGroup: async (groupId: string, input: UpdateGroupInput): Promise<Group> => {
+    const response = (await getClient().graphql({
+      query: UPDATE_GROUP,
+      variables: { groupId, input },
+    })) as GraphQLResult<{ updateGroup: GroupApiResponse }>;
+    const data = handleGraphQLResponse(response, "updateGroup");
+    return transformGroup(data.updateGroup);
+  },
+
+  deleteGroup: async (groupId: string): Promise<boolean> => {
+    const response = (await getClient().graphql({
+      query: DELETE_GROUP,
+      variables: { groupId },
+    })) as GraphQLResult<{ deleteGroup: boolean }>;
+    const data = handleGraphQLResponse(response, "deleteGroup");
+    return data.deleteGroup ?? false;
   },
 };
