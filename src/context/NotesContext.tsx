@@ -14,6 +14,7 @@ interface NotesContextType {
   updateNote: (noteId: string, input: UpdateNoteInput) => Promise<Note>;
   deleteNote: (noteId: string) => Promise<void>;
   getNote: (noteId: string) => Promise<Note | null>;
+  updateNotesCategory: (oldCategory: string, newCategory: string) => Promise<void>;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -90,6 +91,41 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateNotesCategory = async (
+    oldCategory: string,
+    newCategory: string
+  ): Promise<void> => {
+    // Find all notes with the old category and update them
+    const notesToUpdate = notes.filter(
+      (note) => note.category?.toLowerCase() === oldCategory.toLowerCase()
+    );
+
+    try {
+      // Update all notes in parallel
+      const updatePromises = notesToUpdate.map((note) =>
+        notesApi.updateNote(note.noteId, {
+          title: note.title,
+          content: note.content,
+          category: newCategory,
+          tags: note.tags,
+        })
+      );
+
+      const updatedNotes = await Promise.all(updatePromises);
+
+      // Update local state
+      setNotes((prev) =>
+        prev.map((note) => {
+          const updated = updatedNotes.find((u) => u.noteId === note.noteId);
+          return updated || note;
+        })
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to update notes category");
+      throw err;
+    }
+  };
+
   return (
     <NotesContext.Provider
       value={{
@@ -101,6 +137,7 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
         updateNote,
         deleteNote,
         getNote,
+        updateNotesCategory,
       }}
     >
       {children}

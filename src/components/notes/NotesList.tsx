@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useNotes } from "@/context/NotesContext";
+import { useGroups } from "@/context/GroupsContext";
 import { NoteCard } from "./NoteCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,25 +16,44 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 
+const UNGROUPED_ID = "__ungrouped__";
+
 export const NotesList = () => {
   const { notes, loading, deleteNote } = useNotes();
+  const { selectedGroupId, setSelectedGroupId, getGroupById } = useGroups();
   const { addToast } = useToast();
   const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+
+  // Get selected group name for filtering
+  const getSelectedGroupName = (): string | null | undefined => {
+    if (selectedGroupId === null) return undefined; // All notes
+    if (selectedGroupId === UNGROUPED_ID) return null; // Ungrouped
+    const group = getGroupById(selectedGroupId);
+    return group?.name;
+  };
+
+  const selectedGroupName = getSelectedGroupName();
 
   const filteredNotes = notes.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || note.category === categoryFilter;
 
-    return matchesSearch && matchesCategory;
+    // Group filter logic
+    let matchesGroup = true;
+    if (selectedGroupName === null) {
+      // Ungrouped - notes without category
+      matchesGroup = !note.category;
+    } else if (selectedGroupName !== undefined) {
+      // Specific group selected
+      matchesGroup =
+        note.category?.toLowerCase() === selectedGroupName.toLowerCase();
+    }
+    // If selectedGroupName is undefined, show all notes
+
+    return matchesSearch && matchesGroup;
   });
-
-  const categories = Array.from(
-    new Set(notes.map((note) => note.category).filter(Boolean)),
-  ) as string[];
 
   const handleDelete = async (noteId: string) => {
     const confirmed = await confirm({
@@ -82,19 +102,18 @@ export const NotesList = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="sm:max-w-sm"
         />
-        {categories.length > 0 && (
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm h-10"
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+        {/* Group indicator when a specific group is selected */}
+        {selectedGroupId && selectedGroupId !== UNGROUPED_ID && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 border border-primary/20 text-sm">
+            <span className="text-primary font-medium">
+              {getGroupById(selectedGroupId)?.name || "Group"}
+            </span>
+          </div>
+        )}
+        {selectedGroupId === UNGROUPED_ID && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted border border-border text-sm">
+            <span className="text-muted-foreground font-medium">Ungrouped</span>
+          </div>
         )}
       </div>
 
@@ -117,7 +136,7 @@ export const NotesList = () => {
             label: "Clear Filters",
             onClick: () => {
               setSearchQuery("");
-              setCategoryFilter("");
+              setSelectedGroupId(null);
             },
           }}
         />

@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { NotesProvider, useNotes } from "@/context/NotesContext";
+import { GroupsProvider } from "@/context/GroupsContext";
 import { FlashcardsProvider } from "@/context/FlashcardsContext";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
+import { GroupSelect } from "@/components/groups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +25,6 @@ const EditNoteForm = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
-  const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,6 @@ const EditNoteForm = () => {
         setTitle(note.title);
         setContent(note.content);
         setCategory(note.category || "");
-        setTags(note.tags?.join(", ") || "");
       }
       setLoading(false);
     };
@@ -49,16 +49,10 @@ const EditNoteForm = () => {
     setError(null);
 
     try {
-      const tagArray = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean);
-
       await updateNote(noteId, {
         title,
         content,
         category: category || undefined,
-        tags: tagArray.length > 0 ? tagArray : undefined,
       });
 
       addToast({
@@ -314,81 +308,21 @@ const EditNoteForm = () => {
           />
         </div>
 
-        {/* Category and Tags Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Category Field */}
-          <div
-            className="space-y-3 animate-slide-in-up"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <Label
-              htmlFor="category"
-              className="flex items-center gap-2 text-sm font-semibold"
-            >
-              <svg
-                className="w-4 h-4 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                />
-              </svg>
-              Category
-            </Label>
-            <Input
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="EC2"
-              className="h-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-
-          {/* Tags Field */}
-          <div
-            className="space-y-3 animate-slide-in-up"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <Label
-              htmlFor="tags"
-              className="flex items-center gap-2 text-sm font-semibold"
-            >
-              <svg
-                className="w-4 h-4 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                />
-              </svg>
-              Tags
-              <span className="text-xs font-normal text-muted-foreground">
-                (comma-separated)
-              </span>
-            </Label>
-            <Input
-              id="tags"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="compute, instances, aws"
-              className="h-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
+        {/* Group Field */}
+        <div
+          className="animate-slide-in-up relative z-20"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <GroupSelect
+            value={category}
+            onChange={setCategory}
+            label="Group"
+          />
         </div>
 
         {/* Content Field */}
         <div
-          className="space-y-3 animate-slide-in-up"
+          className="space-y-3 animate-slide-in-up relative z-10"
           style={{ animationDelay: "0.4s" }}
         >
           <Label
@@ -458,9 +392,11 @@ const EditNoteForm = () => {
 export default function EditNotePage() {
   return (
     <NotesProvider>
-      <div className="animate-fade-in">
-        <EditNoteForm />
-      </div>
+      <GroupsProvider>
+        <div className="animate-fade-in">
+          <EditNoteForm />
+        </div>
+      </GroupsProvider>
     </NotesProvider>
   );
 }

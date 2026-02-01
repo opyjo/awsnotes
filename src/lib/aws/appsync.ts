@@ -3,14 +3,19 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 
-// Lazily initialize client to ensure Amplify is configured first
-let _client: ReturnType<typeof generateClient> | null = null;
+// Define a simple client type to avoid TypeScript recursive depth issues
+type AmplifyClient = {
+  graphql: (options: { query: string; variables?: Record<string, unknown> }) => Promise<GraphQLResult<unknown>>;
+};
 
-const getClient = () => {
+// Lazily initialize client to ensure Amplify is configured first
+let _client: AmplifyClient | null = null;
+
+const getClient = (): AmplifyClient => {
   if (!_client) {
     _client = generateClient({
       authMode: "userPool",
-    });
+    }) as AmplifyClient;
   }
   return _client;
 };
