@@ -134,11 +134,11 @@ export const FlashcardReview = () => {
             message: `You reviewed ${reviewedCount + 1} flashcard${reviewedCount > 0 ? "s" : ""}.`,
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         addToast({
           type: "error",
           title: "Error",
-          message: "Failed to save review. Please try again.",
+          message: error?.message || "Failed to save review. Please try again.",
         });
       } finally {
         setIsSubmitting(false);

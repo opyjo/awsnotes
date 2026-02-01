@@ -42,11 +42,6 @@ const configureAmplify = () => {
       ssr: true,
     });
     isConfigured = true;
-  } else {
-    console.warn("AWS Amplify not configured. Missing environment variables:", {
-      userPoolId: !!userPoolId,
-      userPoolClientId: !!userPoolClientId,
-    });
   }
 };
 

@@ -33,7 +33,6 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
       setNotes(fetchedNotes);
     } catch (err: any) {
       setError(err.message || "Failed to fetch notes");
-      console.error("Error fetching notes:", err);
     } finally {
       setLoading(false);
     }

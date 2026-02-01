@@ -1,22 +1,52 @@
 import { generateClient, GraphQLResult } from "aws-amplify/api";
+import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 
-// Generate client with userPool auth mode
-const client = generateClient({
-  authMode: "userPool",
-});
+// Lazily initialize client to ensure Amplify is configured first
+let _client: ReturnType<typeof generateClient> | null = null;
+
+const getClient = () => {
+  if (!_client) {
+    _client = generateClient({
+      authMode: "userPool",
+    });
+  }
+  return _client;
+};
+
+// Helper to check if user has valid auth session
+const checkAuthSession = async (): Promise<boolean> => {
+  try {
+    const session = await fetchAuthSession();
+    return !!session.tokens?.idToken;
+  } catch {
+    return false;
+  }
+};
 
 // Helper to handle GraphQL errors
 const handleGraphQLResponse = <T>(
   response: GraphQLResult<T>,
   operationName: string,
 ): T => {
-  // Check for GraphQL errors
   if (response.errors && response.errors.length > 0) {
-    const errorMessages = response.errors.map((e) => e.message).join(", ");
-    console.error(`GraphQL errors in ${operationName}:`, response.errors);
-    throw new Error(errorMessages);
+    const errorMessages = response.errors
+      .map((e) => e.message || (e as any).errorType || "Unknown error")
+      .join(", ");
+    
+    const isAuthError = response.errors.some(
+      (e) =>
+        e.message?.includes("Unauthorized") ||
+        e.message?.includes("not authorized") ||
+        (e as any).errorType === "Unauthorized"
+    );
+    
+    if (isAuthError) {
+      throw new Error("Authorization failed. Please sign in again.");
+    }
+    
+    throw new Error(errorMessages || `Error in ${operationName}`);
   }
 
   if (!response.data) {
@@ -162,84 +192,62 @@ const REVIEW_FLASHCARD = `
 
 export const notesApi = {
   getNotes: async (): Promise<Note[]> => {
-    try {
-      const response = (await client.graphql({
-        query: GET_NOTES,
-      })) as GraphQLResult<{ getNotes: Note[] }>;
-      const data = handleGraphQLResponse(response, "getNotes");
-      return data.getNotes || [];
-    } catch (error: any) {
-      console.error("getNotes error:", {
-        message: error?.message,
-        name: error?.name,
-        errors: error?.errors,
-        data: error?.data,
-        full: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
-      throw error;
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
     }
+    
+    const response = (await getClient().graphql({
+      query: GET_NOTES,
+    })) as GraphQLResult<{ getNotes: Note[] }>;
+    
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(response.errors[0]?.message || "GraphQL query failed");
+    }
+    
+    return response.data?.getNotes || [];
   },
 
   getNote: async (noteId: string): Promise<Note | null> => {
-    try {
-      const response = (await client.graphql({
-        query: GET_NOTE,
-        variables: { noteId },
-      })) as GraphQLResult<{ getNote: Note | null }>;
-      const data = handleGraphQLResponse(response, "getNote");
-      return data.getNote || null;
-    } catch (error: any) {
-      console.error("getNote error:", error);
-      throw error;
-    }
+    const response = (await getClient().graphql({
+      query: GET_NOTE,
+      variables: { noteId },
+    })) as GraphQLResult<{ getNote: Note | null }>;
+    const data = handleGraphQLResponse(response, "getNote");
+    return data.getNote || null;
   },
 
   createNote: async (input: CreateNoteInput): Promise<Note> => {
-    try {
-      const response = (await client.graphql({
-        query: CREATE_NOTE,
-        variables: { input },
-      })) as GraphQLResult<{ createNote: Note }>;
-      const data = handleGraphQLResponse(response, "createNote");
-      return data.createNote;
-    } catch (error: any) {
-      console.error("createNote error:", error);
-      throw error;
-    }
+    const response = (await getClient().graphql({
+      query: CREATE_NOTE,
+      variables: { input },
+    })) as GraphQLResult<{ createNote: Note }>;
+    const data = handleGraphQLResponse(response, "createNote");
+    return data.createNote;
   },
 
   updateNote: async (noteId: string, input: UpdateNoteInput): Promise<Note> => {
-    try {
-      const response = (await client.graphql({
-        query: UPDATE_NOTE,
-        variables: { noteId, input },
-      })) as GraphQLResult<{ updateNote: Note }>;
-      const data = handleGraphQLResponse(response, "updateNote");
-      return data.updateNote;
-    } catch (error: any) {
-      console.error("updateNote error:", error);
-      throw error;
-    }
+    const response = (await getClient().graphql({
+      query: UPDATE_NOTE,
+      variables: { noteId, input },
+    })) as GraphQLResult<{ updateNote: Note }>;
+    const data = handleGraphQLResponse(response, "updateNote");
+    return data.updateNote;
   },
 
   deleteNote: async (noteId: string): Promise<boolean> => {
-    try {
-      const response = (await client.graphql({
-        query: DELETE_NOTE,
-        variables: { noteId },
-      })) as GraphQLResult<{ deleteNote: boolean }>;
-      const data = handleGraphQLResponse(response, "deleteNote");
-      return data.deleteNote ?? false;
-    } catch (error: any) {
-      console.error("deleteNote error:", error);
-      throw error;
-    }
+    const response = (await getClient().graphql({
+      query: DELETE_NOTE,
+      variables: { noteId },
+    })) as GraphQLResult<{ deleteNote: boolean }>;
+    const data = handleGraphQLResponse(response, "deleteNote");
+    return data.deleteNote ?? false;
   },
 };
 
 export const flashcardsApi = {
   getFlashcards: async (deckId: string): Promise<Flashcard[]> => {
-    const response = (await client.graphql({
+    const response = (await getClient().graphql({
       query: GET_FLASHCARDS,
       variables: { deckId },
     })) as GraphQLResult<{ getFlashcards: Flashcard[] }>;
@@ -247,14 +255,14 @@ export const flashcardsApi = {
   },
 
   getDueFlashcards: async (): Promise<Flashcard[]> => {
-    const response = (await client.graphql({
+    const response = (await getClient().graphql({
       query: GET_DUE_FLASHCARDS,
     })) as GraphQLResult<{ getDueFlashcards: Flashcard[] }>;
     return response.data?.getDueFlashcards || [];
   },
 
   createFlashcard: async (input: CreateFlashcardInput): Promise<Flashcard> => {
-    const response = (await client.graphql({
+    const response = (await getClient().graphql({
       query: CREATE_FLASHCARD,
       variables: { input },
     })) as GraphQLResult<{ createFlashcard: Flashcard }>;
@@ -265,10 +273,19 @@ export const flashcardsApi = {
     cardId: string,
     quality: number,
   ): Promise<Flashcard> => {
-    const response = (await client.graphql({
+    const response = (await getClient().graphql({
       query: REVIEW_FLASHCARD,
       variables: { cardId, quality },
     })) as GraphQLResult<{ reviewFlashcard: Flashcard }>;
-    return response.data!.reviewFlashcard;
+    
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(response.errors.map(e => e.message).join(", "));
+    }
+    
+    if (!response.data?.reviewFlashcard) {
+      throw new Error("No data returned from reviewFlashcard");
+    }
+    
+    return response.data.reviewFlashcard;
   },
 };

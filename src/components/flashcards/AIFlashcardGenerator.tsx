@@ -77,8 +77,7 @@ export const AIFlashcardGenerator = ({
             setNoteContent(textContent);
             setSelectedNoteId(noteId);
           }
-        } catch (error) {
-          console.error("Error fetching note:", error);
+        } catch {
           addToast({
             type: "error",
             message: "Failed to load note content",
@@ -103,6 +102,19 @@ export const AIFlashcardGenerator = ({
     }
 
     setSelectedNoteId(selectedId);
+    
+    // First try to find the note in the already-loaded notes array
+    const noteFromList = notes.find((n) => n.noteId === selectedId);
+    if (noteFromList && noteFromList.content) {
+      // Extract text from HTML content
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = noteFromList.content;
+      const textContent = tempDiv.textContent || tempDiv.innerText || "";
+      setNoteContent(textContent);
+      return;
+    }
+
+    // Fallback: fetch from API if not found in list
     setFetchingNote(true);
     try {
       const note = await getNote(selectedId);
@@ -113,8 +125,7 @@ export const AIFlashcardGenerator = ({
         const textContent = tempDiv.textContent || tempDiv.innerText || "";
         setNoteContent(textContent);
       }
-    } catch (error) {
-      console.error("Error fetching note:", error);
+    } catch {
       addToast({
         type: "error",
         message: "Failed to load note content",
