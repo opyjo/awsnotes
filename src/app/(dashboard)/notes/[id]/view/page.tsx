@@ -357,8 +357,12 @@ const ViewNoteContent = () => {
       <AIExplainPanel
         open={explainPanelOpen}
         onOpenChange={setExplainPanelOpen}
-        selectedText={selectedText}
-        noteContext={note.title}
+        initialConcept={selectedText}
+        context={note.title}
+        onInsertExplanation={(explanation) => {
+          // In view mode, we just show a toast since we can't edit
+          console.log("Explanation generated:", explanation);
+        }}
       />
 
       {/* Flashcard Generator */}
