@@ -310,6 +310,154 @@ body {
   transform: rotateY(180deg);
 }
 
+/* Note View Styles - for rendered HTML content */
+.note-content-view {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+
+.note-content-view h1 {
+  font-size: 16px !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+.note-content-view h2 {
+  font-size: 14px !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+.note-content-view h3 {
+  font-size: 13px !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  font-weight: 600 !important;
+}
+
+.note-content-view h4,
+.note-content-view h5,
+.note-content-view h6 {
+  font-size: 13px !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  font-weight: 600 !important;
+}
+
+.note-content-view p {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.note-content-view ul,
+.note-content-view ol {
+  font-size: 13px !important;
+  margin-top: 0.375rem !important;
+  margin-bottom: 0.375rem !important;
+  padding-left: 1rem !important;
+}
+
+.note-content-view li {
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin-top: 0.125rem !important;
+  margin-bottom: 0.125rem !important;
+}
+
+.note-content-view a {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.note-content-view code {
+  font-size: 11px !important;
+  padding: 0.25rem 0.375rem !important;
+}
+
+.note-content-view pre {
+  font-size: 11px !important;
+  padding: 0.625rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.note-content-view pre code {
+  font-size: 11px !important;
+}
+
+.note-content-view blockquote {
+  font-size: 13px !important;
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  padding-left: 0.75rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.note-content-view table {
+  font-size: 12px !important;
+  border-collapse: collapse;
+}
+
+.note-content-view th {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+.note-content-view td {
+  font-size: 12px !important;
+}
+
+.note-content-view img {
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  scroll-margin-top: 80px;
+}
+
+.prose ul, .prose ol {
+  padding-left: 1.25rem;
+}
+
+.prose ul li::marker {
+  color: hsl(var(--muted-foreground));
+}
+
+.prose ol li::marker {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875em;
+}
+
+.prose hr {
+  border-color: hsl(var(--border) / 0.5);
+  margin: 1.5rem 0;
+}
+
+.prose table {
+  font-size: 0.8125rem;
+  border-collapse: collapse;
+}
+
+.prose th, .prose td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem 0.75rem;
+}
+
+.prose th {
+  background-color: hsl(var(--muted) / 0.5);
+  font-weight: 500;
+}
+
+.prose tbody tr:nth-child(even) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
 /* Safe area for mobile bottom nav */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

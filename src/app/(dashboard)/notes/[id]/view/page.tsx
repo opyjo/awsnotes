@@ -230,11 +230,11 @@ const ViewNoteContent = () => {
       {/* Note Content */}
       <article className="animate-fade-in">
         {/* Title and Meta */}
-        <header className="mb-8 space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+        <header className="mb-5 space-y-2.5">
+          <h1 className="text-base md:text-lg font-semibold leading-snug text-foreground">
             {note.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             {group && (
               <span className="flex items-center gap-1.5">
                 <span
@@ -298,13 +298,13 @@ const ViewNoteContent = () => {
 
           {/* Tags */}
           {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {note.tags.map((tag) => (
                 <span
                   key={tag}
                   className={cn(
-                    "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium",
-                    "bg-primary/10 text-primary border border-primary/20"
+                    "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium",
+                    "bg-primary/8 text-primary/80 border border-primary/15"
                   )}
                 >
                   {tag}
@@ -317,24 +317,42 @@ const ViewNoteContent = () => {
         {/* Content */}
         <div
           className={cn(
-            "prose prose-neutral dark:prose-invert max-w-none",
-            "prose-headings:font-semibold prose-headings:tracking-tight",
-            "prose-p:leading-7 prose-p:text-foreground/90",
-            "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
-            "prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm",
-            "prose-pre:bg-muted prose-pre:border prose-pre:border-border",
-            "prose-blockquote:border-l-primary prose-blockquote:bg-muted/30 prose-blockquote:py-1 prose-blockquote:px-4",
-            "prose-img:rounded-lg prose-img:shadow-md"
+            "note-content-view prose prose-sm prose-neutral dark:prose-invert max-w-none",
+            // Headings - compact
+            "prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-foreground",
+            "prose-h1:text-base prose-h1:mt-5 prose-h1:mb-2",
+            "prose-h2:text-sm prose-h2:mt-4 prose-h2:mb-2",
+            "prose-h3:text-[13px] prose-h3:mt-3 prose-h3:mb-1.5",
+            // Paragraphs - small and readable
+            "prose-p:text-[13px] prose-p:leading-relaxed prose-p:text-foreground/85 prose-p:my-2",
+            // Lists - compact
+            "prose-ul:text-[13px] prose-ul:my-1.5 prose-ul:pl-4",
+            "prose-ol:text-[13px] prose-ol:my-1.5 prose-ol:pl-4",
+            "prose-li:text-[13px] prose-li:leading-relaxed prose-li:my-0.5 prose-li:text-foreground/85",
+            // Links
+            "prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-a:font-medium prose-a:text-[13px]",
+            // Code - small
+            "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[11px] prose-code:font-normal prose-code:before:content-none prose-code:after:content-none",
+            "prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:text-[11px] prose-pre:p-2.5 prose-pre:my-2",
+            // Blockquotes
+            "prose-blockquote:border-l-primary/50 prose-blockquote:bg-muted/30 prose-blockquote:py-1.5 prose-blockquote:px-3 prose-blockquote:text-[13px] prose-blockquote:italic prose-blockquote:my-2",
+            // Images
+            "prose-img:rounded-lg prose-img:shadow-sm prose-img:my-3",
+            // Tables
+            "prose-table:text-[12px] prose-th:text-[11px] prose-th:font-medium prose-td:text-[12px]",
+            // Strong and emphasis
+            "prose-strong:font-semibold prose-strong:text-foreground",
+            "prose-em:text-foreground/90"
           )}
           onMouseUp={handleTextSelection}
           dangerouslySetInnerHTML={{ __html: note.content }}
         />
 
         {/* Tip for AI Explain */}
-        <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border/50">
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
+        <div className="mt-6 p-3 rounded-md bg-muted/40 border border-border/40">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <svg
-              className="w-4 h-4 text-primary"
+              className="w-3.5 h-3.5 text-primary/70"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -347,7 +365,7 @@ const ViewNoteContent = () => {
               />
             </svg>
             <span>
-              <strong>Tip:</strong> Select any text to get an AI explanation
+              <strong className="font-medium">Tip:</strong> Select any text to get an AI explanation
             </span>
           </p>
         </div>
