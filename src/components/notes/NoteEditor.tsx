@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -39,6 +39,10 @@ export const NoteEditor = ({
   const { addToast } = useToast();
   const [explainPanelOpen, setExplainPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [selectionToolbar, setSelectionToolbar] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -59,12 +63,40 @@ export const NoteEditor = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      if (from === to) {
+        setSelectionToolbar(null);
+        return;
+      }
+      const selected = editor.state.doc.textBetween(from, to);
+      if (!selected.trim()) {
+        setSelectionToolbar(null);
+        return;
+      }
+
+      const start = editor.view.coordsAtPos(from);
+      const end = editor.view.coordsAtPos(to);
+      setSelectedText(selected);
+      setSelectionToolbar({
+        x: (start.left + end.right) / 2,
+        y: Math.max(8, Math.min(start.top, end.top) - 10),
+      });
+    },
     editorProps: {
       attributes: {
         class: "focus:outline-none min-h-[300px] p-4",
       },
     },
   });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setSelectionToolbar(null);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, []);
 
   const handleImageUpload = (url: string) => {
     if (editor) {
@@ -100,6 +132,45 @@ export const NoteEditor = ({
       addToast({
         type: "success",
         message: "Summary added to note",
+      });
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "Failed to summarize",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    }
+  };
+
+  const handleSummarizeSelection = async () => {
+    if (!editor) return;
+
+    const { from, to } = editor.state.selection;
+    const selection = editor.state.doc.textBetween(from, to);
+
+    if (!selection.trim()) {
+      addToast({
+        type: "error",
+        message: "Please select some text to summarize",
+      });
+      return;
+    }
+
+    try {
+      const summary = await summarizeNote(selection);
+      const safeSummary = escapeHtml(summary).replace(/\n/g, "<br>");
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          to,
+          `<p><strong>Summary:</strong> ${safeSummary}</p>`
+        )
+        .run();
+      addToast({
+        type: "success",
+        message: "Summary added below selection",
       });
     } catch (error) {
       addToast({
@@ -155,6 +226,37 @@ export const NoteEditor = ({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {selectionToolbar && (
+        <div
+          className="fixed z-50 flex items-center gap-1 rounded-full border border-border/60 bg-background/95 px-2 py-1 shadow-lg"
+          style={{
+            left: selectionToolbar.x,
+            top: selectionToolbar.y,
+            transform: "translate(-50%, -100%)",
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleExplainSelection}
+            className="h-7 px-2 text-xs"
+          >
+            Explain
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleSummarizeSelection}
+            className="h-7 px-2 text-xs"
+            disabled={aiLoading}
+          >
+            Summarize
+          </Button>
+        </div>
+      )}
       <div className="flex items-center gap-2 border-b p-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Button

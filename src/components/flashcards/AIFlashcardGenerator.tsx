@@ -1,15 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -20,6 +11,7 @@ import { useNotes } from "@/context/NotesContext";
 import { useToast } from "@/components/ui/toast";
 import type { Flashcard as AIFlashcard } from "@/lib/openai";
 import { cn } from "@/lib/utils";
+import { FloatingPanel } from "@/components/ui/floating-panel";
 
 interface AIFlashcardGeneratorProps {
   open: boolean;
@@ -262,17 +254,14 @@ export const AIFlashcardGenerator = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Generate Flashcards with AI</DialogTitle>
-          <DialogDescription>
-            AI will generate flashcards from your note content. Review and edit
-            them before saving.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
+    <FloatingPanel
+      open={open}
+      onOpenChange={handleClose}
+      title="Generate Flashcards with AI"
+      description="AI will generate flashcards from your note content. Review and edit them before saving."
+      className="space-y-4"
+    >
+      <div className="space-y-4">
           {fetchingNote && (
             <div className="text-center py-8">
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -557,12 +546,10 @@ export const AIFlashcardGenerator = ({
           )}
         </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+          <Button type="button" variant="outline" onClick={() => handleClose()}>
+            Cancel
+          </Button>
           {generatedFlashcards.length > 0 && (
             <Button
               onClick={handleSave}
@@ -597,8 +584,7 @@ export const AIFlashcardGenerator = ({
               )}
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </FloatingPanel>
   );
 };

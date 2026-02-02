@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { Note } from "@/types/note";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useGroups } from "@/context/GroupsContext";
 
 interface NoteCardProps {
   note: Note;
@@ -20,6 +21,11 @@ interface NoteCardProps {
 
 export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
   const router = useRouter();
+  const { getGroupByName } = useGroups();
+  const group = note.category ? getGroupByName(note.category) : undefined;
+  const accentStyle = group?.color
+    ? { background: `linear-gradient(90deg, ${group.color}, ${group.color}CC)` }
+    : undefined;
 
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,7 +75,10 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
       aria-label={`Open note: ${note.title}`}
     >
       {/* Accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
+      <div
+        className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary/60"
+        style={accentStyle}
+      />
 
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
@@ -92,7 +101,12 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
                     d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                   />
                 </svg>
-                <span className="text-muted-foreground">{note.category}</span>
+                <span
+                  className="text-muted-foreground"
+                  style={group?.color ? { color: group.color } : undefined}
+                >
+                  {note.category}
+                </span>
               </CardDescription>
             )}
           </div>

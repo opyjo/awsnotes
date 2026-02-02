@@ -258,36 +258,41 @@ export default function NewNotePage() {
     <NotesProvider>
       <GroupsProvider>
         <div className="space-y-8 animate-fade-in">
-        {/* Header */}
-        <div className="space-y-2 animate-slide-in-up">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <svg
-                className="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Create New Note
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Document your AWS study notes with rich content
-              </p>
+          {/* Header */}
+          <div className="space-y-3 animate-slide-in-up">
+            <div className="flex flex-wrap items-center gap-3 justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <svg
+                    className="w-6 h-6 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Create New Note
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Document your AWS study notes with rich content
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                Rich editor enabled
+              </div>
             </div>
           </div>
-        </div>
 
-        <CreateNoteForm />
+          <CreateNoteForm />
         </div>
       </GroupsProvider>
     </NotesProvider>

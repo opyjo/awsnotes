@@ -1,21 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CreateFlashcardInput } from "@/types/flashcard";
-import { cn } from "@/lib/utils";
+import { FloatingPanel } from "@/components/ui/floating-panel";
 
 interface CreateFlashcardModalProps {
   open: boolean;
@@ -61,17 +51,15 @@ export const CreateFlashcardModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Create Flashcard</DialogTitle>
-          <DialogDescription>
-            Add a new flashcard to your deck. Fill in the question and answer below.
-          </DialogDescription>
-        </DialogHeader>
-
-        {onGenerateFromNote && (
-          <div className="mb-4">
+    <FloatingPanel
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Create Flashcard"
+      description="Add a new flashcard to your deck. Fill in the question and answer below."
+      className="space-y-4"
+    >
+      {onGenerateFromNote && (
+        <div>
             <Button
               type="button"
               variant="outline"
@@ -96,10 +84,10 @@ export const CreateFlashcardModal = ({
               </svg>
               Generate from Note with AI
             </Button>
-          </div>
-        )}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-3">
             <Label htmlFor="front" className="text-base font-semibold flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -136,12 +124,15 @@ export const CreateFlashcardModal = ({
             </p>
           </div>
 
-          <DialogFooter className="gap-3 sm:gap-0">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" className="w-full sm:w-auto">
-                Cancel
-              </Button>
-            </DialogClose>
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
             <Button
               type="submit"
               disabled={saving || !front.trim() || !back.trim()}
@@ -190,9 +181,8 @@ export const CreateFlashcardModal = ({
                 </span>
               )}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+      </form>
+    </FloatingPanel>
   );
 };
