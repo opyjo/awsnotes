@@ -315,14 +315,16 @@ export const flashcardsApi = {
       query: GET_FLASHCARDS,
       variables: { deckId },
     })) as GraphQLResult<{ getFlashcards: Flashcard[] }>;
-    return response.data?.getFlashcards || [];
+    const data = handleGraphQLResponse(response, "getFlashcards");
+    return data.getFlashcards || [];
   },
 
   getDueFlashcards: async (): Promise<Flashcard[]> => {
     const response = (await getClient().graphql({
       query: GET_DUE_FLASHCARDS,
     })) as GraphQLResult<{ getDueFlashcards: Flashcard[] }>;
-    return response.data?.getDueFlashcards || [];
+    const data = handleGraphQLResponse(response, "getDueFlashcards");
+    return data.getDueFlashcards || [];
   },
 
   createFlashcard: async (input: CreateFlashcardInput): Promise<Flashcard> => {
@@ -330,7 +332,8 @@ export const flashcardsApi = {
       query: CREATE_FLASHCARD,
       variables: { input },
     })) as GraphQLResult<{ createFlashcard: Flashcard }>;
-    return response.data!.createFlashcard;
+    const data = handleGraphQLResponse(response, "createFlashcard");
+    return data.createFlashcard;
   },
 
   reviewFlashcard: async (

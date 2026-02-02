@@ -16,6 +16,14 @@ import { AIExplainPanel } from "./AIExplainPanel";
 // Create lowlight instance with common languages
 const lowlight = createLowlight(common);
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 interface NoteEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -80,12 +88,13 @@ export const NoteEditor = ({
       // Extract text from HTML for summarization
       const textContent = editor.getText();
       const summary = await summarizeNote(textContent);
+      const safeSummary = escapeHtml(summary).replace(/\n/g, "<br>");
 
       // Insert summary at the beginning of the document
       editor
         .chain()
         .focus()
-        .setContent(`<h2>Summary</h2><p>${summary.replace(/\n/g, "<br>")}</p><hr>${currentContent}`)
+        .setContent(`<h2>Summary</h2><p>${safeSummary}</p><hr>${currentContent}`)
         .run();
 
       addToast({
@@ -124,10 +133,14 @@ export const NoteEditor = ({
     if (!editor) return;
 
     const { from } = editor.state.selection;
+    const safeExplanation = escapeHtml(explanation).replace(/\n/g, "<br>");
     editor
       .chain()
       .focus()
-      .insertContentAt(from, `<p><strong>Explanation:</strong> ${explanation.replace(/\n/g, "<br>")}</p>`)
+      .insertContentAt(
+        from,
+        `<p><strong>Explanation:</strong> ${safeExplanation}</p>`
+      )
       .run();
 
     addToast({

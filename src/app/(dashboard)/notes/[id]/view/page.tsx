@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { NotesProvider, useNotes } from "@/context/NotesContext";
@@ -11,6 +11,7 @@ import { AIExplainPanel } from "@/components/notes/AIExplainPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 
 const ViewNoteContent = () => {
   const router = useRouter();
@@ -25,6 +26,13 @@ const ViewNoteContent = () => {
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
   const [explainPanelOpen, setExplainPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+
+  const sanitizedContent = useMemo(() => {
+    if (!note?.content) return "";
+    return DOMPurify.sanitize(note.content, {
+      USE_PROFILES: { html: true },
+    });
+  }, [note?.content]);
 
   useEffect(() => {
     const loadNote = async () => {
@@ -345,7 +353,7 @@ const ViewNoteContent = () => {
             "prose-em:text-foreground/90"
           )}
           onMouseUp={handleTextSelection}
-          dangerouslySetInnerHTML={{ __html: note.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
 
         {/* Tip for AI Explain */}
