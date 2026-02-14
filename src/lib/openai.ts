@@ -28,8 +28,16 @@ export const generateFlashcards = async (
   // Validate count
   const flashcardCount = Math.max(1, Math.min(20, count)); // Clamp between 1 and 20
 
-  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards in Q&A format.
-Focus on key concepts, services, and exam-relevant details.
+  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards in Q&A format specifically tailored for the AWS Certified Solutions Architect - Associate (SAA-C03) exam.
+
+Focus on:
+- Key concepts, services, and design patterns frequently tested in SAA-C03
+- Real exam scenarios and use cases
+- Service comparisons (e.g., EFS vs EBS vs S3)
+- Cost optimization and performance considerations
+- Security and compliance best practices
+- High availability and fault tolerance patterns
+
 Return ONLY a valid JSON array with this exact format:
 [
   { "front": "question", "back": "answer" },
@@ -49,7 +57,7 @@ ${noteContent.substring(0, 3000)}`;
         {
           role: "system",
           content:
-            "You are an expert AWS certification tutor. Generate concise, exam-focused flashcards from study notes. Always return valid JSON only.",
+            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam tutor. Generate concise, exam-focused flashcards from study notes that help students pass the SAA-C03 certification. Always return valid JSON only.",
         },
         {
           role: "user",
@@ -95,10 +103,18 @@ export const explainConcept = async (
 Context from notes:
 ${context.substring(0, 1000)}
 
-Provide a clear, concise explanation suitable for AWS certification exam preparation.`
+Provide a clear, concise explanation specifically for the AWS Certified Solutions Architect - Associate (SAA-C03) exam. Include:
+- How this concept appears in exam questions
+- Key points to remember for the exam
+- Common misconceptions or traps
+- Practical use cases tested in SAA-C03`
     : `Explain this AWS concept: "${concept}"
 
-Provide a clear, concise explanation suitable for AWS certification exam preparation.`;
+Provide a clear, concise explanation specifically for the AWS Certified Solutions Architect - Associate (SAA-C03) exam. Include:
+- How this concept appears in exam questions
+- Key points to remember for the exam
+- Common misconceptions or traps
+- Practical use cases tested in SAA-C03`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -107,7 +123,7 @@ Provide a clear, concise explanation suitable for AWS certification exam prepara
         {
           role: "system",
           content:
-            "You are an expert AWS certification tutor. Provide clear, concise explanations of AWS concepts.",
+            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam tutor. Provide clear, concise explanations of AWS concepts specifically focused on helping students pass the SAA-C03 certification exam.",
         },
         {
           role: "user",
@@ -137,9 +153,16 @@ export const summarizeNote = async (noteContent: string): Promise<string> => {
     throw new Error("OpenAI API key is not configured");
   }
 
-  const prompt = `Summarize this AWS study note into concise bullet points.
-Focus on key concepts, services, and exam-relevant information.
-Keep it brief and actionable.
+  const prompt = `Summarize this AWS study note into concise bullet points specifically for AWS Certified Solutions Architect - Associate (SAA-C03) exam preparation.
+
+Focus on:
+- Key concepts most likely to appear in SAA-C03 exam questions
+- Important service features and use cases
+- Design patterns and best practices for the exam
+- Cost optimization and performance considerations
+- Security and compliance requirements
+
+Keep it brief, actionable, and exam-focused.
 
 Note content:
 ${noteContent.substring(0, 3000)}`;
@@ -151,7 +174,7 @@ ${noteContent.substring(0, 3000)}`;
         {
           role: "system",
           content:
-            "You are an expert AWS certification tutor. Create concise summaries of study notes.",
+            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam tutor. Create concise, exam-focused summaries of study notes that highlight the most important information for passing the SAA-C03 certification.",
         },
         {
           role: "user",

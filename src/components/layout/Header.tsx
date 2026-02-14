@@ -9,10 +9,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
   { href: "/notes", label: "Notes" },
   { href: "/flashcards", label: "Flashcards" },
   { href: "/chat", label: "AI Tutor" },
+  { href: "/dashboard", label: "Dashboard" },
 ];
 
 export const Header = () => {
@@ -31,7 +31,7 @@ export const Header = () => {
         <div className="flex items-center gap-4">
           <MobileMenu />
           <Link
-            href="/dashboard"
+            href="/notes"
             className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
           >
             <div className="p-1.5 rounded-md bg-primary/10 border border-primary/20">

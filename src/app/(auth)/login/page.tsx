@@ -28,7 +28,7 @@ export default function LoginPage() {
   // Redirect if already signed in
   useEffect(() => {
     if (!authLoading && user) {
-      router.push("/dashboard");
+      router.push("/notes");
     }
   }, [user, authLoading, router]);
 
@@ -43,7 +43,7 @@ export default function LoginPage() {
         type: "success",
         message: "Welcome back!",
       });
-      router.push("/dashboard");
+      router.push("/notes");
     } catch (err: any) {
       const errorMessage = err.message || "Failed to sign in";
 
@@ -56,7 +56,7 @@ export default function LoginPage() {
           type: "info",
           message: "You're already signed in! Redirecting...",
         });
-        router.push("/dashboard");
+        router.push("/notes");
         return;
       }
 

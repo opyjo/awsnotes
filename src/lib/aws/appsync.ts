@@ -273,6 +273,11 @@ export const notesApi = {
   },
 
   getNote: async (noteId: string): Promise<Note | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
     const response = (await getClient().graphql({
       query: GET_NOTE,
       variables: { noteId },
@@ -282,6 +287,11 @@ export const notesApi = {
   },
 
   createNote: async (input: CreateNoteInput): Promise<Note> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
     const response = (await getClient().graphql({
       query: CREATE_NOTE,
       variables: { input },
@@ -291,6 +301,11 @@ export const notesApi = {
   },
 
   updateNote: async (noteId: string, input: UpdateNoteInput): Promise<Note> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
     const response = (await getClient().graphql({
       query: UPDATE_NOTE,
       variables: { noteId, input },
@@ -300,6 +315,11 @@ export const notesApi = {
   },
 
   deleteNote: async (noteId: string): Promise<boolean> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
     const response = (await getClient().graphql({
       query: DELETE_NOTE,
       variables: { noteId },

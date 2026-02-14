@@ -83,7 +83,7 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0 space-y-1">
-            <CardTitle className="text-lg font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+            <CardTitle className="text-sm font-semibold leading-snug group-hover:text-primary transition-colors break-words">
               {note.title}
             </CardTitle>
             {note.category && (

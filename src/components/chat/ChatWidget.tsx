@@ -11,6 +11,7 @@ import { useChat } from "@/hooks/useChat";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/context/AuthContext";
 import { NotesProvider } from "@/context/NotesContext";
+import { GroupsProvider } from "@/context/GroupsContext";
 
 export const ChatWidget = () => {
   const { user } = useAuth();
@@ -70,7 +71,8 @@ export const ChatWidget = () => {
 
   return (
     <NotesProvider>
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2 safe-area-bottom">
+      <GroupsProvider>
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2 safe-area-bottom">
         {isOpen && (
           <div
             className={cn(
@@ -358,7 +360,8 @@ export const ChatWidget = () => {
           variant="destructive"
           onConfirm={handleClear}
         />
-      </div>
+        </div>
+      </GroupsProvider>
     </NotesProvider>
   );
 };

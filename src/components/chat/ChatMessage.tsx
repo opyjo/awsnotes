@@ -10,6 +10,7 @@ import { useNotes } from "@/context/NotesContext";
 import { useToast } from "@/components/ui/toast";
 import { AVAILABLE_MODELS, type ChatMessage as ChatMessageType } from "@/types/chat";
 import { markdownToHtml } from "@/lib/markdown-to-html";
+import { GroupSelect } from "@/components/groups";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -349,42 +350,107 @@ const renderMarkdown = (content: string) => {
   return elements.length > 0 ? <>{elements}</> : <p>{content}</p>;
 };
 
+// Generate a title from the AI message content
+const generateTitleFromContent = (content: string): string => {
+  // Try to extract the first heading
+  const headingMatch = content.match(/^#{1,6}\s+(.+)$/m);
+  if (headingMatch) {
+    const title = headingMatch[1]
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
+      .replace(/`/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .trim();
+    if (title.length > 60) return title.substring(0, 57) + "...";
+    return title;
+  }
+
+  // Use the first meaningful non-empty line
+  const lines = content.split("\n").filter(
+    (line) => line.trim() && !line.startsWith("```") && !line.match(/^[-*_]{3,}\s*$/)
+  );
+  if (lines.length > 0) {
+    const title = lines[0]
+      .replace(/^[-*+]\s+/, "")
+      .replace(/^\d+\.\s+/, "")
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
+      .replace(/`/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .trim();
+    if (title.length > 60) return title.substring(0, 57) + "...";
+    return title;
+  }
+
+  return "AI Chat Note";
+};
+
 export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
   const { createNote } = useNotes();
   const { addToast } = useToast();
   const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
   const [noteTitle, setNoteTitle] = React.useState("");
+  const [category, setCategory] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const isUser = message.role === "user";
   const modelConfig = message.model ? AVAILABLE_MODELS.find((m) => m.id === message.model) : null;
   const modelBadge = modelConfig?.name || null;
 
+  const handleOpenSaveDialog = () => {
+    // Auto-generate title from message content
+    const generatedTitle = generateTitleFromContent(message.content);
+    setNoteTitle(generatedTitle);
+    setError(null);
+    setSaveDialogOpen(true);
+  };
+
   const handleSaveToNotes = async () => {
     if (!noteTitle.trim()) return;
 
     setIsSaving(true);
+    setError(null);
     try {
       // Convert markdown to HTML for TipTap editor
       const htmlContent = markdownToHtml(message.content);
-      
-      await createNote({
+
+      const noteInput = {
         title: noteTitle.trim(),
         content: htmlContent,
+        category: category || undefined,
         tags: ["ai-chat", message.model || "gpt-4o"],
-      });
+      };
+
+      const savedNote = await createNote(noteInput);
+      console.log("Note saved successfully:", savedNote?.noteId);
       setSaveDialogOpen(false);
       setNoteTitle("");
+      setCategory("");
       addToast({
         type: "success",
         message: "Note saved successfully!",
       });
       onSaveToNotes?.(message.content);
-    } catch (error) {
+    } catch (error: any) {
+      // Extract error message from various error formats
+      let errorMessage = "Failed to save note";
+
+      if (error?.errors && Array.isArray(error.errors)) {
+        // GraphQL errors
+        errorMessage = error.errors.map((e: any) => e.message).join(", ");
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
       console.error("Failed to save note:", error);
+      setError(errorMessage);
       addToast({
         type: "error",
-        message: "Failed to save note. Please try again.",
+        title: "Failed to save note",
+        message: errorMessage,
       });
     } finally {
       setIsSaving(false);
@@ -497,7 +563,7 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
                 <div className="relative group">
                   <button
                     type="button"
-                    onClick={() => setSaveDialogOpen(true)}
+                    onClick={handleOpenSaveDialog}
                     className="hover:text-foreground transition-colors p-1 rounded hover:bg-muted cursor-pointer"
                     aria-label="Save to notes"
                     title="Save to notes"
@@ -545,32 +611,72 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
         )}
       </div>
 
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+      <Dialog open={saveDialogOpen} onOpenChange={(open) => {
+        setSaveDialogOpen(open);
+        if (!open) {
+          setError(null);
+          setNoteTitle("");
+          setCategory("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Save to Notes</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="note-title">Note Title</Label>
+              <Label htmlFor="note-title">Note Title <span className="text-destructive">*</span></Label>
               <Input
                 id="note-title"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
                 placeholder="Enter a title for this note"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && noteTitle.trim()) {
+                  if (e.key === "Enter" && !e.shiftKey && noteTitle.trim() && !isSaving) {
                     e.preventDefault();
                     handleSaveToNotes();
                   }
                 }}
               />
             </div>
+            <div className="space-y-2">
+              <GroupSelect
+                value={category}
+                onChange={setCategory}
+                label="Group"
+              />
+            </div>
+            {error && (
+              <div className={cn(
+                "rounded-lg bg-destructive/10 border border-destructive/20 p-3",
+                "flex items-start gap-2"
+              )}>
+                <svg
+                  className="w-4 h-4 text-destructive shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-xs text-destructive font-medium">{error}</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setSaveDialogOpen(false)}
+              onClick={() => {
+                setSaveDialogOpen(false);
+                setError(null);
+                setNoteTitle("");
+                setCategory("");
+              }}
               disabled={isSaving}
             >
               Cancel
@@ -579,7 +685,33 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
               onClick={handleSaveToNotes}
               disabled={!noteTitle.trim() || isSaving}
             >
-              {isSaving ? "Saving..." : "Save"}
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Saving...
+                </span>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
