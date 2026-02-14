@@ -174,29 +174,6 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
           {contentPreview.length >= 120 && "..."}
         </p>
 
-        {/* Tags */}
-        {note.tags && note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {note.tags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                className={cn(
-                  "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium",
-                  "bg-primary/10 text-primary border border-primary/20",
-                  "transition-colors group-hover:bg-primary/15",
-                )}
-              >
-                {tag}
-              </span>
-            ))}
-            {note.tags.length > 4 && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-muted-foreground bg-muted/50">
-                +{note.tags.length - 4}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Footer with date */}
         <div className="flex items-center justify-between pt-2 border-t border-border/50">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

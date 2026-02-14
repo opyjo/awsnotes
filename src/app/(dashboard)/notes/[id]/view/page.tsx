@@ -370,22 +370,6 @@ const ViewNoteContent = () => {
                 </span>
               </div>
 
-              {/* Tags */}
-              {note.tags && note.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {note.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className={cn(
-                        "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium",
-                        "bg-primary/8 text-primary/80 border border-primary/15"
-                      )}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
             </header>
 
             {/* Content */}
@@ -447,18 +431,6 @@ const ViewNoteContent = () => {
                   </span>
                 </div>
               </div>
-              {note.tags && note.tags.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {note.tags.slice(0, 6).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="rounded-lg border border-border/60 bg-background/70 p-4 shadow-sm space-y-2">

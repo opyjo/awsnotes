@@ -3,7 +3,7 @@ type Note {
   title: String!
   content: String!
   category: String
-  tags: [String]
+
   images: [String]
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -34,7 +34,7 @@ input CreateNoteInput {
   title: String!
   content: String!
   category: String
-  tags: [String]
+
   images: [String]
 }
 
@@ -42,7 +42,7 @@ input UpdateNoteInput {
   title: String
   content: String
   category: String
-  tags: [String]
+
   images: [String]
 }
 

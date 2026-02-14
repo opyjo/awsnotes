@@ -419,7 +419,6 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
         title: noteTitle.trim(),
         content: htmlContent,
         category: category || undefined,
-        tags: ["ai-chat", message.model || "gpt-4o"],
       };
 
       const savedNote = await createNote(noteInput);

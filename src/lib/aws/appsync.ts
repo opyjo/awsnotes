@@ -69,7 +69,6 @@ const GET_NOTES = `
       title
       content
       category
-      tags
       images
       createdAt
       updatedAt
@@ -84,7 +83,6 @@ const GET_NOTE = `
       title
       content
       category
-      tags
       images
       createdAt
       updatedAt
@@ -99,7 +97,6 @@ const CREATE_NOTE = `
       title
       content
       category
-      tags
       images
       createdAt
       updatedAt
@@ -114,7 +111,6 @@ const UPDATE_NOTE = `
       title
       content
       category
-      tags
       images
       createdAt
       updatedAt

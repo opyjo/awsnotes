@@ -251,9 +251,6 @@ export class AwsStudyNotesStack extends cdk.Stack {
             #if($input.category)
             ,"category": $util.dynamodb.toDynamoDBJson($input.category)
             #end
-            #if($input.tags)
-            ,"tags": $util.dynamodb.toDynamoDBJson($input.tags)
-            #end
             #if($input.images)
             ,"images": $util.dynamodb.toDynamoDBJson($input.images)
             #end
@@ -278,13 +275,12 @@ export class AwsStudyNotesStack extends cdk.Stack {
     "SK": $util.dynamodb.toDynamoDBJson("NOTE#$ctx.arguments.noteId")
   },
   "update": {
-    "expression": "SET updatedAt = :now, title = :title, content = :content, category = :category, tags = :tags",
+    "expression": "SET updatedAt = :now, title = :title, content = :content, category = :category",
     "expressionValues": {
       ":now": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
       ":title": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.title),
       ":content": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.content),
-      ":category": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrEmpty($ctx.arguments.input.category, "")),
-      ":tags": $util.dynamodb.toDynamoDBJson($util.defaultIfNull($ctx.arguments.input.tags, []))
+      ":category": $util.dynamodb.toDynamoDBJson($util.defaultIfNullOrEmpty($ctx.arguments.input.category, ""))
     }
   }
 }`,

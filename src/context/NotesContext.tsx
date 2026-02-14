@@ -107,7 +107,6 @@ export const NotesProvider = ({ children }: { children: React.ReactNode }) => {
           title: note.title,
           content: note.content,
           category: newCategory,
-          tags: note.tags,
         })
       );
 

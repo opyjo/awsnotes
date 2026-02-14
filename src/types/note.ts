@@ -3,7 +3,7 @@ export interface Note {
   title: string;
   content: string;
   category?: string;
-  tags?: string[];
+
   images?: string[];
   createdAt: string;
   updatedAt: string;
@@ -13,7 +13,7 @@ export interface CreateNoteInput {
   title: string;
   content: string;
   category?: string;
-  tags?: string[];
+
   images?: string[];
 }
 
@@ -21,6 +21,6 @@ export interface UpdateNoteInput {
   title?: string;
   content?: string;
   category?: string;
-  tags?: string[];
+
   images?: string[];
 }
