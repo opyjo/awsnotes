@@ -423,6 +423,63 @@ $util.toJson($result)`,
       ),
     });
 
+    // ==========================================
+    // Resolvers for User Settings (stored in NotesTable with SETTINGS# prefix)
+    // ==========================================
+
+    // getUserSettings
+    notesDs.createResolver("GetUserSettingsResolver", {
+      typeName: "Query",
+      fieldName: "getUserSettings",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": { "S": "SETTINGS#exam" }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.result)
+$util.toJson($ctx.result)
+#else
+null
+#end`,
+      ),
+    });
+
+    // saveUserSettings
+    notesDs.createResolver("SaveUserSettingsResolver", {
+      typeName: "Mutation",
+      fieldName: "saveUserSettings",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
+        {
+          "version": "2017-02-28",
+          "operation": "PutItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": { "S": "SETTINGS#exam" }
+          },
+          "attributeValues": {
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.examDate)
+            ,"examDate": $util.dynamodb.toDynamoDBJson($input.examDate)
+            #end
+            #if($input.todos)
+            ,"todos": $util.dynamodb.toDynamoDBJson($input.todos)
+            #end
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result)",
+      ),
+    });
+
     // deleteGroup
     notesDs.createResolver("DeleteGroupResolver", {
       typeName: "Mutation",

@@ -63,6 +63,31 @@ input UpdateGroupInput {
   color: String
 }
 
+type TodoItem {
+  id: String!
+  text: String!
+  completed: Boolean!
+  createdAt: AWSDateTime!
+}
+
+type UserSettings {
+  examDate: String
+  todos: [TodoItem]
+  updatedAt: AWSDateTime!
+}
+
+input TodoItemInput {
+  id: String!
+  text: String!
+  completed: Boolean!
+  createdAt: AWSDateTime!
+}
+
+input SaveUserSettingsInput {
+  examDate: String
+  todos: [TodoItemInput]
+}
+
 type Query {
   getNotes: [Note]
   getNote(noteId: ID!): Note
@@ -70,6 +95,7 @@ type Query {
   getDueFlashcards: [Flashcard]
   getGroups: [Group]
   getGroup(groupId: ID!): Group
+  getUserSettings: UserSettings
 }
 
 type Mutation {
@@ -81,4 +107,5 @@ type Mutation {
   createGroup(input: CreateGroupInput!): Group
   updateGroup(groupId: ID!, input: UpdateGroupInput!): Group
   deleteGroup(groupId: ID!): Boolean
+  saveUserSettings(input: SaveUserSettingsInput!): UserSettings
 }

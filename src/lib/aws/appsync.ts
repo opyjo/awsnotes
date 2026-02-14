@@ -448,3 +448,94 @@ export const groupsApi = {
     return data.deleteGroup ?? false;
   },
 };
+
+// ==========================================
+// User Settings Queries and Mutations
+// ==========================================
+
+export interface TodoItemData {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: string;
+}
+
+export interface UserSettingsData {
+  examDate: string | null;
+  todos: TodoItemData[];
+  updatedAt: string;
+}
+
+export interface SaveUserSettingsInput {
+  examDate?: string | null;
+  todos?: TodoItemData[];
+}
+
+const GET_USER_SETTINGS = `
+  query GetUserSettings {
+    getUserSettings {
+      examDate
+      todos {
+        id
+        text
+        completed
+        createdAt
+      }
+      updatedAt
+    }
+  }
+`;
+
+const SAVE_USER_SETTINGS = `
+  mutation SaveUserSettings($input: SaveUserSettingsInput!) {
+    saveUserSettings(input: $input) {
+      examDate
+      todos {
+        id
+        text
+        completed
+        createdAt
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const userSettingsApi = {
+  getUserSettings: async (): Promise<UserSettingsData | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      return null;
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_USER_SETTINGS,
+    })) as GraphQLResult<{ getUserSettings: UserSettingsData | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      console.error("Failed to fetch user settings:", response.errors);
+      return null;
+    }
+
+    return response.data?.getUserSettings || null;
+  },
+
+  saveUserSettings: async (input: SaveUserSettingsInput): Promise<UserSettingsData | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: SAVE_USER_SETTINGS,
+      variables: { input },
+    })) as GraphQLResult<{ saveUserSettings: UserSettingsData }>;
+
+    if (response.errors && response.errors.length > 0) {
+      console.error("Failed to save user settings:", response.errors);
+      throw new Error(response.errors[0]?.message || "Failed to save settings");
+    }
+
+    return response.data?.saveUserSettings || null;
+  },
+};

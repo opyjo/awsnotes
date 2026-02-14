@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { userSettingsApi, type TodoItemData } from "@/lib/aws/appsync";
+import { useAuth } from "@/context/AuthContext";
 
-const EXAM_DATE_KEY = "aws-study-notes-exam-date";
-const DAILY_TODOS_KEY = "aws-study-notes-daily-todos";
+const CACHE_KEY = "aws-study-notes-exam-settings";
 
 export interface Todo {
   id: string;
@@ -12,34 +13,69 @@ export interface Todo {
   createdAt: string;
 }
 
-interface ExamCountdownData {
+interface CachedSettings {
   examDate: string | null;
-  daysRemaining: number | null;
+  todos: Todo[];
 }
 
+// Read cache for instant UI (before API responds)
+const readCache = (): CachedSettings | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (data: CachedSettings) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage unavailable
+  }
+};
+
 export const useExamCountdown = () => {
+  const { user } = useAuth();
   const [examDate, setExamDateState] = useState<string | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load from localStorage on mount
+  // Load: cache first for instant UI, then API for truth
   useEffect(() => {
-    try {
-      const storedDate = localStorage.getItem(EXAM_DATE_KEY);
-      const storedTodos = localStorage.getItem(DAILY_TODOS_KEY);
-
-      if (storedDate) {
-        setExamDateState(storedDate);
-      }
-      if (storedTodos) {
-        setTodos(JSON.parse(storedTodos));
-      }
-    } catch (error) {
-      console.error("Failed to load exam data from localStorage:", error);
+    const cached = readCache();
+    if (cached) {
+      setExamDateState(cached.examDate);
+      setTodos(cached.todos);
     }
-  }, []);
 
-  // Calculate days remaining whenever examDate changes
+    if (user) {
+      userSettingsApi.getUserSettings().then((settings) => {
+        if (settings) {
+          const apiTodos: Todo[] = (settings.todos || []).map((t) => ({
+            id: t.id,
+            text: t.text,
+            completed: t.completed,
+            createdAt: t.createdAt,
+          }));
+          setExamDateState(settings.examDate || null);
+          setTodos(apiTodos);
+          writeCache({ examDate: settings.examDate || null, todos: apiTodos });
+        }
+        setLoaded(true);
+      }).catch((err) => {
+        console.error("Failed to load settings from API:", err);
+        setLoaded(true);
+      });
+    } else {
+      setLoaded(true);
+    }
+  }, [user]);
+
+  // Calculate days remaining
   useEffect(() => {
     if (!examDate) {
       setDaysRemaining(null);
@@ -51,80 +87,120 @@ export const useExamCountdown = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       exam.setHours(0, 0, 0, 0);
-
       const diffTime = exam.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDaysRemaining(diffDays);
+      setDaysRemaining(Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     };
 
     calculateDays();
-    // Update every hour to keep it fresh
     const interval = setInterval(calculateDays, 1000 * 60 * 60);
-
     return () => clearInterval(interval);
   }, [examDate]);
 
-  const setExamDate = (date: string | null) => {
-    try {
-      if (date) {
-        localStorage.setItem(EXAM_DATE_KEY, date);
-      } else {
-        localStorage.removeItem(EXAM_DATE_KEY);
+  // Debounced save to API
+  const persistToApi = useCallback(
+    (newExamDate: string | null, newTodos: Todo[]) => {
+      writeCache({ examDate: newExamDate, todos: newTodos });
+
+      if (!user) return;
+
+      // Debounce saves to avoid excessive API calls
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        const todosInput: TodoItemData[] = newTodos.map((t) => ({
+          id: t.id,
+          text: t.text,
+          completed: t.completed,
+          createdAt: t.createdAt,
+        }));
+
+        userSettingsApi
+          .saveUserSettings({
+            examDate: newExamDate,
+            todos: todosInput,
+          })
+          .catch((err) => {
+            console.error("Failed to save settings:", err);
+          });
+      }, 500);
+    },
+    [user]
+  );
+
+  const setExamDate = useCallback(
+    (date: string | null) => {
       setExamDateState(date);
-    } catch (error) {
-      console.error("Failed to save exam date:", error);
-    }
-  };
+      setTodos((currentTodos) => {
+        persistToApi(date, currentTodos);
+        return currentTodos;
+      });
+    },
+    [persistToApi]
+  );
 
-  const addTodo = (text: string) => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      text,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
+  const addTodo = useCallback(
+    (text: string) => {
+      const newTodo: Todo = {
+        id: Date.now().toString(),
+        text,
+        completed: false,
+        createdAt: new Date().toISOString(),
+      };
 
-    const updatedTodos = [...todos, newTodo];
-    setTodos(updatedTodos);
-    try {
-      localStorage.setItem(DAILY_TODOS_KEY, JSON.stringify(updatedTodos));
-    } catch (error) {
-      console.error("Failed to save todos:", error);
-    }
-  };
+      setTodos((prev) => {
+        const updated = [...prev, newTodo];
+        setExamDateState((currentDate) => {
+          persistToApi(currentDate, updated);
+          return currentDate;
+        });
+        return updated;
+      });
+    },
+    [persistToApi]
+  );
 
-  const toggleTodo = (id: string) => {
-    const updatedTodos = todos.map((todo) =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
-    setTodos(updatedTodos);
-    try {
-      localStorage.setItem(DAILY_TODOS_KEY, JSON.stringify(updatedTodos));
-    } catch (error) {
-      console.error("Failed to update todos:", error);
-    }
-  };
+  const toggleTodo = useCallback(
+    (id: string) => {
+      setTodos((prev) => {
+        const updated = prev.map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        );
+        setExamDateState((currentDate) => {
+          persistToApi(currentDate, updated);
+          return currentDate;
+        });
+        return updated;
+      });
+    },
+    [persistToApi]
+  );
 
-  const deleteTodo = (id: string) => {
-    const updatedTodos = todos.filter((todo) => todo.id !== id);
-    setTodos(updatedTodos);
-    try {
-      localStorage.setItem(DAILY_TODOS_KEY, JSON.stringify(updatedTodos));
-    } catch (error) {
-      console.error("Failed to delete todo:", error);
-    }
-  };
+  const deleteTodo = useCallback(
+    (id: string) => {
+      setTodos((prev) => {
+        const updated = prev.filter((todo) => todo.id !== id);
+        setExamDateState((currentDate) => {
+          persistToApi(currentDate, updated);
+          return currentDate;
+        });
+        return updated;
+      });
+    },
+    [persistToApi]
+  );
 
-  const clearCompleted = () => {
-    const updatedTodos = todos.filter((todo) => !todo.completed);
-    setTodos(updatedTodos);
-    try {
-      localStorage.setItem(DAILY_TODOS_KEY, JSON.stringify(updatedTodos));
-    } catch (error) {
-      console.error("Failed to clear completed todos:", error);
-    }
-  };
+  const clearCompleted = useCallback(() => {
+    setTodos((prev) => {
+      const updated = prev.filter((todo) => !todo.completed);
+      setExamDateState((currentDate) => {
+        persistToApi(currentDate, updated);
+        return currentDate;
+      });
+      return updated;
+    });
+  }, [persistToApi]);
 
   return {
     examDate,
@@ -135,5 +211,6 @@ export const useExamCountdown = () => {
     toggleTodo,
     deleteTodo,
     clearCompleted,
+    loaded,
   };
 };
