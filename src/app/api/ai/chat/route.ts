@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
 import { streamChatCompletion as streamAnthropic } from "@/lib/anthropic";
-import { AVAILABLE_MODELS, type ModelId, type OpenAIModel, type AnthropicModel } from "@/types/chat";
+import { streamChatCompletion as streamMoonshot } from "@/lib/moonshot";
+import { AVAILABLE_MODELS, type ModelId, type OpenAIModel, type AnthropicModel, type MoonshotModel } from "@/types/chat";
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
@@ -128,10 +129,14 @@ export const POST = async (req: NextRequest) => {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator =
-            modelConfig.provider === "openai"
-              ? streamOpenAI(messages, model as OpenAIModel)
-              : streamAnthropic(messages, AWS_SYSTEM_PROMPT, model as AnthropicModel);
+          let generator: AsyncGenerator<string, void, unknown>;
+          if (modelConfig.provider === "openai") {
+            generator = streamOpenAI(messages, model as OpenAIModel);
+          } else if (modelConfig.provider === "moonshot") {
+            generator = streamMoonshot(messages, AWS_SYSTEM_PROMPT, model as MoonshotModel);
+          } else {
+            generator = streamAnthropic(messages, AWS_SYSTEM_PROMPT, model as AnthropicModel);
+          }
 
           for await (const chunk of generator) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));

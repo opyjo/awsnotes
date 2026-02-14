@@ -32,6 +32,17 @@ const AnthropicIcon = () => (
   </svg>
 );
 
+const MoonshotIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+    />
+  </svg>
+);
+
 export const ModelSelector = ({
   selectedModel,
   onModelChange,
@@ -41,6 +52,7 @@ export const ModelSelector = ({
 
   const openaiModels = AVAILABLE_MODELS.filter((m) => m.provider === "openai");
   const anthropicModels = AVAILABLE_MODELS.filter((m) => m.provider === "anthropic");
+  const moonshotModels = AVAILABLE_MODELS.filter((m) => m.provider === "moonshot");
 
   const selectedModelConfig = AVAILABLE_MODELS.find((m) => m.id === selectedModel) || AVAILABLE_MODELS[0];
 
@@ -74,7 +86,7 @@ export const ModelSelector = ({
       )}
     >
       <span className="text-muted-foreground">
-        {model.provider === "openai" ? <OpenAIIcon /> : <AnthropicIcon />}
+        {model.provider === "openai" ? <OpenAIIcon /> : model.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
       </span>
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{model.name}</div>
@@ -113,7 +125,7 @@ export const ModelSelector = ({
         aria-expanded={isOpen}
       >
         <span className="text-muted-foreground">
-          {selectedModelConfig.provider === "openai" ? <OpenAIIcon /> : <AnthropicIcon />}
+          {selectedModelConfig.provider === "openai" ? <OpenAIIcon /> : selectedModelConfig.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
         </span>
         <span className="font-medium">{selectedModelConfig.name}</span>
         <svg
@@ -150,6 +162,14 @@ export const ModelSelector = ({
               </div>
             </div>
             {anthropicModels.map(renderModelItem)}
+
+            <div className="px-3 py-2 border-b border-t border-border">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <MoonshotIcon />
+                Moonshot (Kimi K2)
+              </div>
+            </div>
+            {moonshotModels.map(renderModelItem)}
           </div>
         </>
       )}

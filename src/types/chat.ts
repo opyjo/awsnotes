@@ -1,7 +1,7 @@
-export type ModelProvider = "openai" | "anthropic";
+export type ModelProvider = "openai" | "anthropic" | "moonshot";
 
 // OpenAI models
-export type OpenAIModel = 
+export type OpenAIModel =
   | "gpt-4o"
   | "gpt-4o-mini"
   | "gpt-4-turbo"
@@ -12,12 +12,18 @@ export type OpenAIModel =
   | "o1-preview";
 
 // Anthropic models (Claude 4.5)
-export type AnthropicModel = 
+export type AnthropicModel =
   | "claude-sonnet-4-5-20250929"
   | "claude-haiku-4-5-20251001"
   | "claude-opus-4-5-20251101";
 
-export type ModelId = OpenAIModel | AnthropicModel;
+// Moonshot models (Kimi K2)
+export type MoonshotModel =
+  | "kimi-k2-0711-preview"
+  | "kimi-k2-0905-preview"
+  | "kimi-k2-thinking";
+
+export type ModelId = OpenAIModel | AnthropicModel | MoonshotModel;
 
 export interface ModelConfig {
   id: ModelId;
@@ -94,6 +100,25 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
     provider: "anthropic",
     name: "Claude Opus 4.5",
     description: "Maximum intelligence",
+  },
+  // Moonshot Models (Kimi K2)
+  {
+    id: "kimi-k2-0711-preview",
+    provider: "moonshot",
+    name: "Kimi K2",
+    description: "Powerful open-source model",
+  },
+  {
+    id: "kimi-k2-0905-preview",
+    provider: "moonshot",
+    name: "Kimi K2 (Sep)",
+    description: "Latest Kimi K2 update",
+  },
+  {
+    id: "kimi-k2-thinking",
+    provider: "moonshot",
+    name: "Kimi K2 Thinking",
+    description: "Advanced reasoning model",
   },
 ];
 
