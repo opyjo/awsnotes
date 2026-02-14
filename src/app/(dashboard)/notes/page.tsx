@@ -4,6 +4,7 @@ import { NotesProvider, useNotes } from "@/context/NotesContext";
 import { GroupsProvider } from "@/context/GroupsContext";
 import { NotesList } from "@/components/notes/NotesList";
 import { GroupsSidebar } from "@/components/groups";
+import { ExamCountdownWidget } from "@/components/exam";
 
 const NotesPageContent = () => {
   const { notes, updateNotesCategory } = useNotes();
@@ -15,7 +16,8 @@ const NotesPageContent = () => {
   return (
     <div className="flex h-full -m-4 md:-m-6">
       <GroupsSidebar notes={notes} onGroupChange={handleGroupChange} />
-      <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+      <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
+        <ExamCountdownWidget />
         <NotesList />
       </div>
     </div>
