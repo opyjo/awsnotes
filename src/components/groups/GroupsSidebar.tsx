@@ -219,7 +219,7 @@ export const GroupsSidebar = ({ notes, onGroupChange }: GroupsSidebarProps) => {
                     selectedGroupId === group.id
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-foreground/70",
-                    sidebarCollapsed && "justify-center px-0"
+                    sidebarCollapsed ? "justify-center px-0" : "pr-8"
                   )}
                   aria-label={group.name}
                 >
