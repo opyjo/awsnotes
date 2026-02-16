@@ -430,8 +430,13 @@ export const groupsApi = {
     if (response.errors && response.errors.length > 0) {
       throw new Error(response.errors[0]?.message || "GraphQL query failed");
     }
-    
-    return (response.data?.getGroups || []).map(transformGroup);
+
+    const groups = (response.data?.getGroups || []).map(transformGroup);
+
+    // Sort groups alphabetically by name (case-insensitive)
+    groups.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    return groups;
   },
 
   getGroup: async (groupId: string): Promise<Group | null> => {
