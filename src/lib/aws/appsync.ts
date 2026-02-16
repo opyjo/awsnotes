@@ -293,6 +293,12 @@ export const notesApi = {
       variables: { input },
     })) as GraphQLResult<{ createNote: Note }>;
     const data = handleGraphQLResponse(response, "createNote");
+
+    if (!data.createNote || !data.createNote.noteId) {
+      console.error("createNote returned without a valid noteId:", data);
+      throw new Error("Note creation failed - no valid note returned from server.");
+    }
+
     return data.createNote;
   },
 

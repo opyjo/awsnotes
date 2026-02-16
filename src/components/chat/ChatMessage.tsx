@@ -415,6 +415,14 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
       // Convert markdown to HTML for TipTap editor
       const htmlContent = markdownToHtml(message.content);
 
+      // Check content size - DynamoDB has a 400KB item limit
+      const estimatedSize = new Blob([htmlContent]).size + new Blob([noteTitle]).size;
+      if (estimatedSize > 350000) {
+        throw new Error(
+          "This response is too large to save as a single note. Try saving a shorter section."
+        );
+      }
+
       const noteInput = {
         title: noteTitle.trim(),
         content: htmlContent,
@@ -422,7 +430,12 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
       };
 
       const savedNote = await createNote(noteInput);
-      console.log("Note saved successfully:", savedNote?.noteId);
+
+      if (!savedNote?.noteId) {
+        throw new Error("Save appeared to succeed but no note ID was returned. Please try again.");
+      }
+
+      console.log("Note saved successfully:", savedNote.noteId);
       setSaveDialogOpen(false);
       setNoteTitle("");
       setCategory("");

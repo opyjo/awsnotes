@@ -199,11 +199,15 @@ export class AwsStudyNotesStack extends cdk.Stack {
               ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
               ":notePrefix": { "S": "NOTE#" }
             }
-          }
+          },
+          "consistentRead": true
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result.items)",
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result.items)`,
       ),
     });
 
@@ -219,11 +223,15 @@ export class AwsStudyNotesStack extends cdk.Stack {
           "key": {
             "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
             "SK": $util.dynamodb.toDynamoDBJson("NOTE#$noteId")
-          }
+          },
+          "consistentRead": true
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result)",
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result)`,
       ),
     });
 
@@ -258,7 +266,10 @@ export class AwsStudyNotesStack extends cdk.Stack {
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result)",
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type, $ctx.result)
+#end
+$util.toJson($ctx.result)`,
       ),
     });
 
