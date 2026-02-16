@@ -282,6 +282,9 @@ export const notesApi = {
       nextToken = data?.nextToken || null;
     } while (nextToken);
 
+    // Sort notes alphabetically by title (case-insensitive)
+    allNotes.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+
     console.log(`[getNotes] Fetched ${allNotes.length} notes total`);
     return allNotes;
   },
