@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useNote } from "@/hooks/api/useNote";
 import { useNotes } from "@/hooks/api/useNotes";
@@ -13,29 +13,21 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import type { Note } from "@/types/note";
 
-const EditNoteForm = () => {
+// Inner form component — only mounts once note data is available
+// so useState and TipTap editor initialize with real content
+const EditNoteFormContent = ({ note: initialNote, noteId }: { note: Note; noteId: string }) => {
   const router = useRouter();
-  const params = useParams();
-  const noteId = params.id as string;
-  const { note, isLoading: loading } = useNote(noteId);
   const { updateNote, deleteNote } = useNotes();
   const { addToast } = useToast();
   const confirm = useConfirm();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState(initialNote.title);
+  const [content, setContent] = useState(initialNote.content);
+  const [category, setCategory] = useState(initialNote.category || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
-
-  useEffect(() => {
-    if (note) {
-      setTitle(note.title);
-      setContent(note.content);
-      setCategory(note.category || "");
-    }
-  }, [note]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,36 +97,6 @@ const EditNoteForm = () => {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
-        <div className="text-center space-y-4">
-          <svg
-            className="animate-spin h-8 w-8 mx-auto text-primary"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          <p className="text-muted-foreground">Loading note...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -381,10 +343,110 @@ const EditNoteForm = () => {
   );
 };
 
+// Outer component handles loading/error states
+// Only mounts EditNoteFormContent once note data is available
+const EditNoteLoader = () => {
+  const router = useRouter();
+  const params = useParams();
+  const noteId = params.id as string;
+  const { note, isLoading, isError, error: queryError } = useNote(noteId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
+        <div className="text-center space-y-4">
+          <svg
+            className="animate-spin h-8 w-8 mx-auto text-primary"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <p className="text-muted-foreground">Loading note...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
+        <div className="text-center space-y-4 max-w-md">
+          <svg
+            className="h-12 w-12 mx-auto text-destructive"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Error Loading Note</h2>
+            <p className="text-muted-foreground mb-4">{queryError || "Failed to load note"}</p>
+            <Button onClick={() => router.push("/notes")}>
+              Back to Notes
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!note) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] animate-fade-in">
+        <div className="text-center space-y-4">
+          <svg
+            className="h-12 w-12 mx-auto text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Note Not Found</h2>
+            <p className="text-muted-foreground mb-4">The note you&apos;re looking for doesn&apos;t exist.</p>
+            <Button onClick={() => router.push("/notes")}>
+              Back to Notes
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // key={noteId} ensures fresh mount when navigating between notes
+  return <EditNoteFormContent note={note} noteId={noteId} key={noteId} />;
+};
+
 export default function EditNotePage() {
   return (
     <div className="animate-fade-in">
-      <EditNoteForm />
+      <EditNoteLoader />
     </div>
   );
 }
