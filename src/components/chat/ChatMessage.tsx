@@ -435,7 +435,6 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
         throw new Error("Save appeared to succeed but no note ID was returned. Please try again.");
       }
 
-      console.log("Note saved successfully:", savedNote.noteId);
       setSaveDialogOpen(false);
       setNoteTitle("");
       setCategory("");

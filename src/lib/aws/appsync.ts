@@ -285,7 +285,6 @@ export const notesApi = {
     // Sort notes alphabetically by title (case-insensitive)
     allNotes.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
 
-    console.log(`[getNotes] Fetched ${allNotes.length} notes total`);
     return allNotes;
   },
 
@@ -309,47 +308,15 @@ export const notesApi = {
       throw new Error("Not authenticated. Please sign in.");
     }
 
-    console.log("[createNote] Sending mutation with input:", {
-      title: input.title,
-      contentLength: input.content?.length,
-      category: input.category,
-    });
-
     const response = (await getClient().graphql({
       query: CREATE_NOTE,
       variables: { input },
     })) as GraphQLResult<{ createNote: Note }>;
 
-    console.log("[createNote] Raw response:", JSON.stringify(response, null, 2));
-
     const data = handleGraphQLResponse(response, "createNote");
 
     if (!data.createNote || !data.createNote.noteId) {
-      console.error("[createNote] No valid noteId in response:", data);
       throw new Error("Note creation failed - no valid note returned from server.");
-    }
-
-    // Verify the note was actually persisted by reading it back
-    const noteId = data.createNote.noteId;
-    console.log("[createNote] Mutation returned noteId:", noteId, "— verifying write...");
-
-    try {
-      const verifyResponse = (await getClient().graphql({
-        query: GET_NOTE,
-        variables: { noteId },
-      })) as GraphQLResult<{ getNote: Note | null }>;
-
-      const verifyData = verifyResponse.data;
-      if (!verifyData?.getNote) {
-        console.error("[createNote] VERIFICATION FAILED — note not found in DB after save:", noteId);
-        throw new Error(
-          "Note was not persisted to the database. The save appeared to succeed but the note cannot be read back. Please try again."
-        );
-      }
-      console.log("[createNote] VERIFIED — note exists in DB:", verifyData.getNote.noteId);
-    } catch (verifyErr: any) {
-      if (verifyErr.message?.includes("not persisted")) throw verifyErr;
-      console.error("[createNote] Verification read failed:", verifyErr);
     }
 
     return data.createNote;
