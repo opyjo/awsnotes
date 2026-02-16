@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { NotesProvider, useNotes } from "@/context/NotesContext";
-import { GroupsProvider, useGroups } from "@/context/GroupsContext";
-import { FlashcardsProvider } from "@/context/FlashcardsContext";
+import { useNote } from "@/hooks/api/useNote";
+import { useNotes } from "@/hooks/api/useNotes";
+import { useGroups } from "@/hooks/api/useGroups";
 import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { AIExplainPanel } from "@/components/notes/AIExplainPanel";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,9 @@ const ViewNoteContent = () => {
   const router = useRouter();
   const params = useParams();
   const noteId = params.id as string;
-  const { getNote, deleteNote } = useNotes();
+  const { note, isLoading: loading } = useNote(noteId);
+  const { deleteNote } = useNotes();
   const { getGroupByName } = useGroups();
-  const [note, setNote] = useState<Awaited<ReturnType<typeof getNote>> | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
   const [explainPanelOpen, setExplainPanelOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
@@ -40,15 +37,6 @@ const ViewNoteContent = () => {
       USE_PROFILES: { html: true },
     });
   }, [note?.content]);
-
-  useEffect(() => {
-    const loadNote = async () => {
-      const fetchedNote = await getNote(noteId);
-      setNote(fetchedNote);
-      setLoading(false);
-    };
-    loadNote();
-  }, [noteId, getNote]);
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this note?")) {
@@ -560,28 +548,20 @@ const ViewNoteContent = () => {
       />
 
       {/* Flashcard Generator */}
-      <FlashcardsProvider>
-        <AIFlashcardGenerator
-          open={flashcardGeneratorOpen}
-          onOpenChange={(open) => {
-            setFlashcardGeneratorOpen(open);
-            if (!open) setFlashcardSeed(null);
-          }}
-          noteId={noteId}
-          noteContent={flashcardSeed || note.content}
-          deckId="default"
-        />
-      </FlashcardsProvider>
+      <AIFlashcardGenerator
+        open={flashcardGeneratorOpen}
+        onOpenChange={(open) => {
+          setFlashcardGeneratorOpen(open);
+          if (!open) setFlashcardSeed(null);
+        }}
+        noteId={noteId}
+        noteContent={flashcardSeed || note.content}
+        deckId="default"
+      />
     </div>
   );
 };
 
 export default function ViewNotePage() {
-  return (
-    <NotesProvider>
-      <GroupsProvider>
-        <ViewNoteContent />
-      </GroupsProvider>
-    </NotesProvider>
-  );
+  return <ViewNoteContent />;
 }

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { Note } from "@/types/note";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useGroups } from "@/context/GroupsContext";
+import { useGroups } from "@/hooks/api/useGroups";
 
 interface NoteCardProps {
   note: Note;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useNotes } from "@/context/NotesContext";
-import { useGroups } from "@/context/GroupsContext";
+import { useNotes } from "@/hooks/api/useNotes";
+import { useGroups } from "@/hooks/api/useGroups";
 import { NoteCard } from "./NoteCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +18,25 @@ import Link from "next/link";
 
 const UNGROUPED_ID = "__ungrouped__";
 
-export const NotesList = () => {
-  const { notes, loading, deleteNote } = useNotes();
-  const { selectedGroupId, setSelectedGroupId, getGroupById } = useGroups();
+interface NotesListProps {
+  selectedGroupId?: string | null;
+  onSelectedGroupChange?: (groupId: string | null) => void;
+}
+
+export const NotesList = ({
+  selectedGroupId: externalSelectedGroupId,
+  onSelectedGroupChange: externalOnSelectedGroupChange,
+}: NotesListProps = {}) => {
+  const { notes, isLoading: loading, deleteNote } = useNotes();
+  const { getGroupById } = useGroups();
   const { addToast } = useToast();
   const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState("");
+  const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string | null>(null);
+
+  // Use external state if provided, otherwise use internal state
+  const selectedGroupId = externalSelectedGroupId !== undefined ? externalSelectedGroupId : internalSelectedGroupId;
+  const setSelectedGroupId = externalOnSelectedGroupChange || setInternalSelectedGroupId;
 
   // Get selected group name for filtering
   const getSelectedGroupName = (): string | null | undefined => {

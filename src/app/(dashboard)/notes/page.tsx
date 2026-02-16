@@ -1,13 +1,14 @@
 "use client";
 
-import { NotesProvider, useNotes } from "@/context/NotesContext";
-import { GroupsProvider } from "@/context/GroupsContext";
+import { useState } from "react";
+import { useNotes } from "@/hooks/api/useNotes";
 import { NotesList } from "@/components/notes/NotesList";
 import { GroupsSidebar } from "@/components/groups";
 import { ExamCountdownWidget } from "@/components/exam";
 
-const NotesPageContent = () => {
+export default function NotesPage() {
   const { notes, updateNotesCategory } = useNotes();
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const handleGroupChange = async (oldName: string, newName: string) => {
     await updateNotesCategory(oldName, newName);
@@ -15,21 +16,19 @@ const NotesPageContent = () => {
 
   return (
     <div className="flex h-full -m-4 md:-m-6">
-      <GroupsSidebar notes={notes} onGroupChange={handleGroupChange} />
+      <GroupsSidebar
+        notes={notes}
+        onGroupChange={handleGroupChange}
+        selectedGroupId={selectedGroupId}
+        onGroupSelect={setSelectedGroupId}
+      />
       <div className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto">
         <ExamCountdownWidget />
-        <NotesList />
+        <NotesList
+          selectedGroupId={selectedGroupId}
+          onSelectedGroupChange={setSelectedGroupId}
+        />
       </div>
     </div>
-  );
-};
-
-export default function NotesPage() {
-  return (
-    <NotesProvider>
-      <GroupsProvider>
-        <NotesPageContent />
-      </GroupsProvider>
-    </NotesProvider>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FlashcardsProvider, useFlashcards } from "@/context/FlashcardsContext";
-import { NotesProvider, useNotes } from "@/context/NotesContext";
+import { useFlashcards } from "@/hooks/api/useFlashcards";
+import { useNotes } from "@/hooks/api/useNotes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateFlashcardModal } from "@/components/flashcards/CreateFlashcardModal";
@@ -10,8 +10,8 @@ import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerat
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const FlashcardsPageContent = () => {
-  const { dueFlashcards, loading, createFlashcard } = useFlashcards();
+export default function FlashcardsPage() {
+  const { dueFlashcards, isLoading: loading, createFlashcard } = useFlashcards();
   const { notes } = useNotes();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false);
@@ -263,15 +263,5 @@ const FlashcardsPageContent = () => {
         deckId={selectedDeckId}
       />
     </div>
-  );
-};
-
-export default function FlashcardsPage() {
-  return (
-    <NotesProvider>
-      <FlashcardsProvider>
-        <FlashcardsPageContent />
-      </FlashcardsProvider>
-    </NotesProvider>
   );
 }

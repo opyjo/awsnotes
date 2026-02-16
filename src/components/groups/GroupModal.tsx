@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGroups } from "@/context/GroupsContext";
+import { useGroups } from "@/hooks/api/useGroups";
 import { GROUP_COLORS, type Group } from "@/types/group";
 import { cn } from "@/lib/utils";
 

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { NotesProvider, useNotes } from "@/context/NotesContext";
-import { GroupsProvider } from "@/context/GroupsContext";
-import { FlashcardsProvider } from "@/context/FlashcardsContext";
+import { useNote } from "@/hooks/api/useNote";
+import { useNotes } from "@/hooks/api/useNotes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { GroupSelect } from "@/components/groups";
@@ -19,29 +18,24 @@ const EditNoteForm = () => {
   const router = useRouter();
   const params = useParams();
   const noteId = params.id as string;
-  const { getNote, updateNote, deleteNote } = useNotes();
+  const { note, isLoading: loading } = useNote(noteId);
+  const { updateNote, deleteNote } = useNotes();
   const { addToast } = useToast();
   const confirm = useConfirm();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
 
   useEffect(() => {
-    const loadNote = async () => {
-      const note = await getNote(noteId);
-      if (note) {
-        setTitle(note.title);
-        setContent(note.content);
-        setCategory(note.category || "");
-      }
-      setLoading(false);
-    };
-    loadNote();
-  }, [noteId, getNote]);
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+      setCategory(note.category || "");
+    }
+  }, [note]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -376,27 +370,21 @@ const EditNoteForm = () => {
         )}
       </form>
 
-      <FlashcardsProvider>
-        <AIFlashcardGenerator
-          open={flashcardGeneratorOpen}
-          onOpenChange={setFlashcardGeneratorOpen}
-          noteId={noteId}
-          noteContent={content}
-          deckId="default"
-        />
-      </FlashcardsProvider>
+      <AIFlashcardGenerator
+        open={flashcardGeneratorOpen}
+        onOpenChange={setFlashcardGeneratorOpen}
+        noteId={noteId}
+        noteContent={content}
+        deckId="default"
+      />
     </div>
   );
 };
 
 export default function EditNotePage() {
   return (
-    <NotesProvider>
-      <GroupsProvider>
-        <div className="animate-fade-in">
-          <EditNoteForm />
-        </div>
-      </GroupsProvider>
-    </NotesProvider>
+    <div className="animate-fade-in">
+      <EditNoteForm />
+    </div>
   );
 }

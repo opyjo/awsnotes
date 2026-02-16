@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNotes } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/api/useNotes";
 import { useToast } from "@/components/ui/toast";
 import { AVAILABLE_MODELS, type ChatMessage as ChatMessageType } from "@/types/chat";
 import { markdownToHtml } from "@/lib/markdown-to-html";

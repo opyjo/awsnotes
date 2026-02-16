@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NotesProvider, useNotes } from "@/context/NotesContext";
-import { GroupsProvider } from "@/context/GroupsContext";
+import { useNotes } from "@/hooks/api/useNotes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { GroupSelect } from "@/components/groups";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-const CreateNoteForm = () => {
+export default function NewNotePage() {
   const router = useRouter();
   const { createNote } = useNotes();
   const { addToast } = useToast();
@@ -21,6 +20,47 @@ const CreateNoteForm = () => {
   const [category, setCategory] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
+      <div className="space-y-3 animate-slide-in-up">
+        <div className="flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+              <svg
+                className="w-6 h-6 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Create New Note
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Document your AWS study notes with rich content
+              </p>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+            Rich editor enabled
+          </div>
+        </div>
+      </div>
+      <CreateNoteForm />
+    </div>
+  );
+
+  function CreateNoteForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,50 +291,5 @@ const CreateNoteForm = () => {
       </form>
     </div>
   );
-};
-
-export default function NewNotePage() {
-  return (
-    <NotesProvider>
-      <GroupsProvider>
-        <div className="space-y-8 animate-fade-in">
-          {/* Header */}
-          <div className="space-y-3 animate-slide-in-up">
-            <div className="flex flex-wrap items-center gap-3 justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                  <svg
-                    className="w-6 h-6 text-primary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    Create New Note
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Document your AWS study notes with rich content
-                  </p>
-                </div>
-              </div>
-              <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-                Rich editor enabled
-              </div>
-            </div>
-          </div>
-
-          <CreateNoteForm />
-        </div>
-      </GroupsProvider>
-    </NotesProvider>
-  );
+  }
 }

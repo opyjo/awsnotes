@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useGroups } from "@/context/GroupsContext";
+import { useState, useEffect } from "react";
+import { useGroups } from "@/hooks/api/useGroups";
 import { GroupModal } from "./GroupModal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,19 +11,50 @@ import type { Group } from "@/types/group";
 interface GroupsSidebarProps {
   notes: Note[];
   onGroupChange?: (oldName: string, newName: string) => Promise<void>;
+  selectedGroupId?: string | null;
+  onGroupSelect?: (groupId: string | null) => void;
 }
 
-export const GroupsSidebar = ({ notes, onGroupChange }: GroupsSidebarProps) => {
-  const {
-    groups,
-    selectedGroupId,
-    setSelectedGroupId,
-    sidebarCollapsed,
-    setSidebarCollapsed,
-  } = useGroups();
+const SIDEBAR_STATE_KEY = "aws-study-notes-sidebar-collapsed";
+
+export const GroupsSidebar = ({
+  notes,
+  onGroupChange,
+  selectedGroupId: externalSelectedGroupId,
+  onGroupSelect: externalOnGroupSelect,
+}: GroupsSidebarProps) => {
+  const { groups } = useGroups();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const selectedGroupId = externalSelectedGroupId !== undefined ? externalSelectedGroupId : internalSelectedGroupId;
+  const setSelectedGroupId = externalOnGroupSelect || setInternalSelectedGroupId;
+
+  // Load sidebar state from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_STATE_KEY);
+      if (stored) {
+        setSidebarCollapsedState(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error("Failed to load sidebar state:", err);
+    }
+  }, []);
+
+  // Save sidebar state to localStorage
+  const setSidebarCollapsed = (collapsed: boolean) => {
+    setSidebarCollapsedState(collapsed);
+    try {
+      localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(collapsed));
+    } catch (err) {
+      console.error("Failed to save sidebar state:", err);
+    }
+  };
 
   // Count notes per group
   const getNotesCount = (groupName: string | null): number => {

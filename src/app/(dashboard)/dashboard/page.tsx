@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { NotesProvider, useNotes } from "@/context/NotesContext";
-import { FlashcardsProvider, useFlashcards } from "@/context/FlashcardsContext";
+import { useNotes } from "@/hooks/api/useNotes";
+import { useFlashcards } from "@/hooks/api/useFlashcards";
 import {
   Card,
   CardContent,
@@ -15,9 +15,9 @@ import { DashboardSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, EmptyNotesIcon } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 
-const DashboardContent = () => {
-  const { notes, loading: notesLoading } = useNotes();
-  const { dueFlashcards, loading: cardsLoading } = useFlashcards();
+export default function DashboardPage() {
+  const { notes, isLoading: notesLoading } = useNotes();
+  const { dueFlashcards, isLoading: cardsLoading } = useFlashcards();
 
   const loading = notesLoading || cardsLoading;
 
@@ -197,15 +197,5 @@ const DashboardContent = () => {
         </Card>
       </div>
     </div>
-  );
-};
-
-export default function DashboardPage() {
-  return (
-    <NotesProvider>
-      <FlashcardsProvider>
-        <DashboardContent />
-      </FlashcardsProvider>
-    </NotesProvider>
   );
 }

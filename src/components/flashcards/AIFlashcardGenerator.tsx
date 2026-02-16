@@ -6,8 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAI } from "@/hooks/useAI";
-import { useFlashcards } from "@/context/FlashcardsContext";
-import { useNotes } from "@/context/NotesContext";
+import { useFlashcards } from "@/hooks/api/useFlashcards";
+import { useNote } from "@/hooks/api/useNote";
+import { useNotes } from "@/hooks/api/useNotes";
 import { useToast } from "@/components/ui/toast";
 import type { Flashcard as AIFlashcard } from "@/lib/openai";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,8 @@ export const AIFlashcardGenerator = ({
 }: AIFlashcardGeneratorProps) => {
   const { generateFlashcards, loading } = useAI();
   const { createFlashcard } = useFlashcards();
-  const { getNote, notes, fetchNotes } = useNotes();
+  const { note } = useNote(noteId || "");
+  const { notes } = useNotes();
   const { addToast } = useToast();
   const [generatedFlashcards, setGeneratedFlashcards] = useState<
     AIFlashcard[]
@@ -47,43 +49,29 @@ export const AIFlashcardGenerator = ({
   const [inputMode, setInputMode] = useState<"select" | "paste">("select");
   const [flashcardCount, setFlashcardCount] = useState<number>(5);
 
-  // Fetch notes when dialog opens
-  useEffect(() => {
-    if (open && fetchNotes) {
-      fetchNotes();
-    }
-  }, [open, fetchNotes]);
-
   // Fetch note content if noteId is provided initially
   useEffect(() => {
-    const fetchNoteContent = async () => {
-      if (noteId && !providedNoteContent && open && getNote) {
-        setFetchingNote(true);
-        try {
-          const note = await getNote(noteId);
-          if (note) {
-            // Extract text from HTML content
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = note.content;
-            const textContent = tempDiv.textContent || tempDiv.innerText || "";
-            setNoteContent(textContent);
-            setSelectedNoteId(noteId);
-          }
-        } catch {
-          addToast({
-            type: "error",
-            message: "Failed to load note content",
-          });
-        } finally {
-          setFetchingNote(false);
-        }
-      } else if (providedNoteContent) {
-        setNoteContent(providedNoteContent);
+    if (note && noteId && !providedNoteContent && open) {
+      setFetchingNote(true);
+      try {
+        // Extract text from HTML content
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = note.content;
+        const textContent = tempDiv.textContent || tempDiv.innerText || "";
+        setNoteContent(textContent);
+        setSelectedNoteId(noteId);
+      } catch {
+        addToast({
+          type: "error",
+          message: "Failed to load note content",
+        });
+      } finally {
+        setFetchingNote(false);
       }
-    };
-
-    fetchNoteContent();
-  }, [noteId, providedNoteContent, open, getNote, addToast]);
+    } else if (providedNoteContent) {
+      setNoteContent(providedNoteContent);
+    }
+  }, [note, noteId, providedNoteContent, open, addToast]);
 
   // Handle note selection from dropdown
   const handleNoteSelect = async (selectedId: string) => {
@@ -95,7 +83,7 @@ export const AIFlashcardGenerator = ({
 
     setSelectedNoteId(selectedId);
     
-    // First try to find the note in the already-loaded notes array
+    // Find the note in the already-loaded notes array
     const noteFromList = notes.find((n) => n.noteId === selectedId);
     if (noteFromList && noteFromList.content) {
       // Extract text from HTML content
@@ -103,27 +91,11 @@ export const AIFlashcardGenerator = ({
       tempDiv.innerHTML = noteFromList.content;
       const textContent = tempDiv.textContent || tempDiv.innerText || "";
       setNoteContent(textContent);
-      return;
-    }
-
-    // Fallback: fetch from API if not found in list
-    setFetchingNote(true);
-    try {
-      const note = await getNote(selectedId);
-      if (note) {
-        // Extract text from HTML content
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = note.content;
-        const textContent = tempDiv.textContent || tempDiv.innerText || "";
-        setNoteContent(textContent);
-      }
-    } catch {
+    } else {
       addToast({
         type: "error",
-        message: "Failed to load note content",
+        message: "Note not found",
       });
-    } finally {
-      setFetchingNote(false);
     }
   };
 

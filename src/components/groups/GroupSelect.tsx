@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGroups } from "@/context/GroupsContext";
+import { useGroups } from "@/hooks/api/useGroups";
 import { GroupModal } from "./GroupModal";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { AmplifyProvider } from "@/components/providers/AmplifyProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,13 +34,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AmplifyProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <AuthProvider>{children}</AuthProvider>
-              </ConfirmProvider>
-            </ToastProvider>
-          </ThemeProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <ConfirmProvider>
+                  <AuthProvider>{children}</AuthProvider>
+                </ConfirmProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </QueryProvider>
         </AmplifyProvider>
       </body>
     </html>

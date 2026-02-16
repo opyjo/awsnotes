@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
-import { useFlashcards } from "@/context/FlashcardsContext";
+import { useFlashcards } from "@/hooks/api/useFlashcards";
 import { FlashcardFlip } from "./FlashcardFlip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,7 +97,7 @@ const ratingConfig: {
 ];
 
 export const FlashcardReview = () => {
-  const { dueFlashcards, reviewFlashcard, fetchDueFlashcards, loading } =
+  const { dueFlashcards, reviewFlashcard, isLoading: loading } =
     useFlashcards();
   const { addToast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -105,10 +105,6 @@ export const FlashcardReview = () => {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchDueFlashcards();
-  }, []);
 
   const currentCard = dueFlashcards[currentIndex];
 
