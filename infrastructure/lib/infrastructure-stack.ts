@@ -185,11 +185,12 @@ export class AwsStudyNotesStack extends cdk.Stack {
     // Resolvers for Notes
     // ==========================================
 
-    // getNotes
+    // getNotes (with pagination support)
     notesDs.createResolver("GetNotesResolver", {
       typeName: "Query",
       fieldName: "getNotes",
       requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($limit = $util.defaultIfNull($ctx.arguments.limit, 1000))
         {
           "version": "2017-02-28",
           "operation": "Query",
@@ -200,6 +201,10 @@ export class AwsStudyNotesStack extends cdk.Stack {
               ":notePrefix": { "S": "NOTE#" }
             }
           },
+          "limit": $limit,
+          #if($ctx.arguments.nextToken)
+          "nextToken": "$ctx.arguments.nextToken",
+          #end
           "consistentRead": true
         }
       `),
@@ -207,7 +212,10 @@ export class AwsStudyNotesStack extends cdk.Stack {
         `#if($ctx.error)
   $util.error($ctx.error.message, $ctx.error.type)
 #end
-$util.toJson($ctx.result.items)`,
+{
+  "items": $util.toJson($ctx.result.items),
+  "nextToken": $util.toJson($ctx.result.nextToken)
+}`,
       ),
     });
 

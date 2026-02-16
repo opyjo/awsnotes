@@ -63,15 +63,18 @@ const handleGraphQLResponse = <T>(
 };
 
 const GET_NOTES = `
-  query GetNotes {
-    getNotes {
-      noteId
-      title
-      content
-      category
-      images
-      createdAt
-      updatedAt
+  query GetNotes($limit: Int, $nextToken: String) {
+    getNotes(limit: $limit, nextToken: $nextToken) {
+      items {
+        noteId
+        title
+        content
+        category
+        images
+        createdAt
+        updatedAt
+      }
+      nextToken
     }
   }
 `;
@@ -256,16 +259,31 @@ export const notesApi = {
     if (!hasAuth) {
       throw new Error("Not authenticated. Please sign in.");
     }
-    
-    const response = (await getClient().graphql({
-      query: GET_NOTES,
-    })) as GraphQLResult<{ getNotes: Note[] }>;
-    
-    if (response.errors && response.errors.length > 0) {
-      throw new Error(response.errors[0]?.message || "GraphQL query failed");
-    }
-    
-    return response.data?.getNotes || [];
+
+    // Fetch all notes with automatic pagination
+    let allNotes: Note[] = [];
+    let nextToken: string | null = null;
+
+    do {
+      const response = (await getClient().graphql({
+        query: GET_NOTES,
+        variables: { limit: 1000, nextToken },
+      })) as GraphQLResult<{ getNotes: { items: Note[]; nextToken: string | null } }>;
+
+      if (response.errors && response.errors.length > 0) {
+        throw new Error(response.errors[0]?.message || "GraphQL query failed");
+      }
+
+      const data = response.data?.getNotes;
+      if (data?.items) {
+        allNotes = allNotes.concat(data.items);
+      }
+
+      nextToken = data?.nextToken || null;
+    } while (nextToken);
+
+    console.log(`[getNotes] Fetched ${allNotes.length} notes total`);
+    return allNotes;
   },
 
   getNote: async (noteId: string): Promise<Note | null> => {
@@ -288,15 +306,47 @@ export const notesApi = {
       throw new Error("Not authenticated. Please sign in.");
     }
 
+    console.log("[createNote] Sending mutation with input:", {
+      title: input.title,
+      contentLength: input.content?.length,
+      category: input.category,
+    });
+
     const response = (await getClient().graphql({
       query: CREATE_NOTE,
       variables: { input },
     })) as GraphQLResult<{ createNote: Note }>;
+
+    console.log("[createNote] Raw response:", JSON.stringify(response, null, 2));
+
     const data = handleGraphQLResponse(response, "createNote");
 
     if (!data.createNote || !data.createNote.noteId) {
-      console.error("createNote returned without a valid noteId:", data);
+      console.error("[createNote] No valid noteId in response:", data);
       throw new Error("Note creation failed - no valid note returned from server.");
+    }
+
+    // Verify the note was actually persisted by reading it back
+    const noteId = data.createNote.noteId;
+    console.log("[createNote] Mutation returned noteId:", noteId, "— verifying write...");
+
+    try {
+      const verifyResponse = (await getClient().graphql({
+        query: GET_NOTE,
+        variables: { noteId },
+      })) as GraphQLResult<{ getNote: Note | null }>;
+
+      const verifyData = verifyResponse.data;
+      if (!verifyData?.getNote) {
+        console.error("[createNote] VERIFICATION FAILED — note not found in DB after save:", noteId);
+        throw new Error(
+          "Note was not persisted to the database. The save appeared to succeed but the note cannot be read back. Please try again."
+        );
+      }
+      console.log("[createNote] VERIFIED — note exists in DB:", verifyData.getNote.noteId);
+    } catch (verifyErr: any) {
+      if (verifyErr.message?.includes("not persisted")) throw verifyErr;
+      console.error("[createNote] Verification read failed:", verifyErr);
     }
 
     return data.createNote;

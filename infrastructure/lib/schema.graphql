@@ -88,8 +88,13 @@ input SaveUserSettingsInput {
   todos: [TodoItemInput]
 }
 
+type NotesConnection {
+  items: [Note]
+  nextToken: String
+}
+
 type Query {
-  getNotes: [Note]
+  getNotes(limit: Int, nextToken: String): NotesConnection
   getNote(noteId: ID!): Note
   getFlashcards(deckId: ID!): [Flashcard]
   getDueFlashcards: [Flashcard]
