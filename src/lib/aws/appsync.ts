@@ -178,6 +178,23 @@ const CREATE_FLASHCARD = `
   }
 `;
 
+const UPDATE_FLASHCARD = `
+  mutation UpdateFlashcard($cardId: ID!, $input: UpdateFlashcardInput!) {
+    updateFlashcard(cardId: $cardId, input: $input) {
+      cardId
+      deckId
+      front
+      back
+      noteId
+      easeFactor
+      interval
+      repetitions
+      nextReviewDate
+      createdAt
+    }
+  }
+`;
+
 const REVIEW_FLASHCARD = `
   mutation ReviewFlashcard($cardId: ID!, $quality: Int!) {
     reviewFlashcard(cardId: $cardId, quality: $quality) {
@@ -376,6 +393,18 @@ export const flashcardsApi = {
     })) as GraphQLResult<{ createFlashcard: Flashcard }>;
     const data = handleGraphQLResponse(response, "createFlashcard");
     return data.createFlashcard;
+  },
+
+  updateFlashcard: async (
+    cardId: string,
+    input: { deckId?: string; front?: string; back?: string },
+  ): Promise<Flashcard> => {
+    const response = (await getClient().graphql({
+      query: UPDATE_FLASHCARD,
+      variables: { cardId, input },
+    })) as GraphQLResult<{ updateFlashcard: Flashcard }>;
+    const data = handleGraphQLResponse(response, "updateFlashcard");
+    return data.updateFlashcard;
   },
 
   reviewFlashcard: async (

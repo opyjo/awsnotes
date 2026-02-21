@@ -5,7 +5,7 @@ import { getAuthToken } from "@/lib/aws/cognito";
 import type { ChatMessage, ChatState, ModelId } from "@/types/chat";
 
 const STORAGE_KEY = "aws-study-chat-history";
-const DEFAULT_MODEL: ModelId = "claude-sonnet-4-5-20250929";
+const DEFAULT_MODEL: ModelId = "kimi-k2-thinking";
 
 interface UseChatResult {
   messages: ChatMessage[];

@@ -53,6 +53,12 @@ input CreateFlashcardInput {
   noteId: ID
 }
 
+input UpdateFlashcardInput {
+  deckId: ID
+  front: String
+  back: String
+}
+
 input CreateGroupInput {
   name: String!
   color: String
@@ -108,6 +114,7 @@ type Mutation {
   updateNote(noteId: ID!, input: UpdateNoteInput!): Note
   deleteNote(noteId: ID!): Boolean
   createFlashcard(input: CreateFlashcardInput!): Flashcard
+  updateFlashcard(cardId: ID!, input: UpdateFlashcardInput!): Flashcard
   reviewFlashcard(cardId: ID!, quality: Int!): Flashcard
   createGroup(input: CreateGroupInput!): Group
   updateGroup(groupId: ID!, input: UpdateGroupInput!): Group

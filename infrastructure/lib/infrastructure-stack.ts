@@ -606,6 +606,56 @@ null
       ),
     });
 
+    // updateFlashcard
+    flashcardsDs.createResolver("UpdateFlashcardResolver", {
+      typeName: "Mutation",
+      fieldName: "updateFlashcard",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($cardId = $ctx.arguments.cardId)
+        #set($input = $ctx.arguments.input)
+        #set($expParts = [])
+        #set($expValues = {})
+        #if($input.deckId)
+          $util.qr($expParts.add("deckId = :deckId"))
+          $util.qr($expValues.put(":deckId", $util.dynamodb.toDynamoDB($input.deckId)))
+        #end
+        #if($input.front)
+          $util.qr($expParts.add("front = :front"))
+          $util.qr($expValues.put(":front", $util.dynamodb.toDynamoDB($input.front)))
+        #end
+        #if($input.back)
+          $util.qr($expParts.add("back = :back"))
+          $util.qr($expValues.put(":back", $util.dynamodb.toDynamoDB($input.back)))
+        #end
+        {
+          "version": "2018-05-29",
+          "operation": "UpdateItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("CARD#$cardId")
+          },
+          "update": {
+            "expression": "SET $util.toJson($util.join(', ', $expParts))",
+            "expressionValues": $util.toJson($expValues)
+          },
+          "condition": {
+            "expression": "PK = :userId",
+            "expressionValues": {
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+            }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if($ctx.error)
+          $util.error($ctx.error.message, $ctx.error.type)
+        #end
+        #set($result = $ctx.result)
+        #set($result.cardId = $ctx.arguments.cardId)
+        $util.toJson($result)
+      `),
+    });
+
     // reviewFlashcard (Lambda)
     lambdaDs.createResolver("ReviewFlashcardResolver", {
       typeName: "Mutation",

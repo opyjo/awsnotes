@@ -37,6 +37,20 @@ export const useFlashcards = (deckId?: string) => {
     },
   });
 
+  // Mutation: Update flashcard (e.g. move to a different deck/group)
+  const updateFlashcardMutation = useMutation({
+    mutationFn: ({
+      cardId,
+      input,
+    }: {
+      cardId: string;
+      input: { deckId?: string; front?: string; back?: string };
+    }) => flashcardsApi.updateFlashcard(cardId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.flashcards.all });
+    },
+  });
+
   // Mutation: Review flashcard
   const reviewFlashcardMutation = useMutation({
     mutationFn: ({ cardId, quality }: { cardId: string; quality: number }) =>
@@ -64,6 +78,8 @@ export const useFlashcards = (deckId?: string) => {
 
     // Mutations
     createFlashcard: createFlashcardMutation.mutateAsync,
+    updateFlashcard: (cardId: string, input: { deckId?: string; front?: string; back?: string }) =>
+      updateFlashcardMutation.mutateAsync({ cardId, input }),
     reviewFlashcard: (cardId: string, quality: number) =>
       reviewFlashcardMutation.mutateAsync({ cardId, quality }),
 

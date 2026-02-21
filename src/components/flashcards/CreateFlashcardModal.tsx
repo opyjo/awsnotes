@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CreateFlashcardInput } from "@/types/flashcard";
+import type { Group } from "@/types/group";
 import { FloatingPanel } from "@/components/ui/floating-panel";
 
 interface CreateFlashcardModalProps {
@@ -14,6 +15,8 @@ interface CreateFlashcardModalProps {
   deckId: string;
   noteId?: string;
   onGenerateFromNote?: () => void;
+  groups?: Group[];
+  onDeckChange?: (deckId: string) => void;
 }
 
 export const CreateFlashcardModal = ({
@@ -23,6 +26,8 @@ export const CreateFlashcardModal = ({
   deckId,
   noteId,
   onGenerateFromNote,
+  groups = [],
+  onDeckChange,
 }: CreateFlashcardModalProps) => {
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -88,6 +93,27 @@ export const CreateFlashcardModal = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+          {groups.length > 0 && (
+            <div className="space-y-3">
+              <Label htmlFor="deck" className="text-base font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                Group
+              </Label>
+              <select
+                id="deck"
+                value={deckId}
+                onChange={(e) => onDeckChange?.(e.target.value)}
+                className="w-full rounded-md border-2 border-input bg-background px-3 py-2 text-sm focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+              >
+                <option value="default">General</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="space-y-3">
             <Label htmlFor="front" className="text-base font-semibold flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-500" />

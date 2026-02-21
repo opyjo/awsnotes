@@ -96,9 +96,18 @@ const ratingConfig: {
   },
 ];
 
-export const FlashcardReview = () => {
-  const { dueFlashcards, reviewFlashcard, isLoading: loading } =
+interface FlashcardReviewProps {
+  deckId?: string;
+  groupName?: string;
+}
+
+export const FlashcardReview = ({ deckId, groupName }: FlashcardReviewProps) => {
+  const { dueFlashcards: allDueFlashcards, reviewFlashcard, isLoading: loading } =
     useFlashcards();
+
+  const dueFlashcards = deckId
+    ? allDueFlashcards.filter((card) => card.deckId === deckId)
+    : allDueFlashcards;
   const { addToast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -230,7 +239,7 @@ export const FlashcardReview = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Review Flashcards
+              {groupName ? `Review: ${groupName}` : "Review Flashcards"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Study smarter with spaced repetition
