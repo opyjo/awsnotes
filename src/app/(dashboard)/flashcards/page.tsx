@@ -397,7 +397,7 @@ export default function FlashcardsPage() {
         <ReassignModal
           cards={groupSections.generalCards}
           groups={groups}
-          onReassign={(cardId, deckId) => updateFlashcard(cardId, { deckId })}
+          onReassign={async (cardId, deckId) => { await updateFlashcard(cardId, { deckId }); }}
           onClose={() => setReassignOpen(false)}
         />
       )}
