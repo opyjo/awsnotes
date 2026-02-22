@@ -1,7 +1,12 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryCache } from '@tanstack/react-query';
 
 export function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        console.error(`[Query error] key: ${JSON.stringify(query.queryKey)}`, error);
+      },
+    }),
     defaultOptions: {
       queries: {
         // Stale time: How long data is considered "fresh"
