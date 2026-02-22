@@ -154,13 +154,21 @@ export const NoteChatPanel = ({
 
       const sectionHtml = `<hr><h2>Chat Session · ${date}</h2>${conversationHtml}`;
 
-      await updateNote(noteId, { content: noteContent + sectionHtml });
+      await updateNote(noteId, { content: (noteContent || "") + sectionHtml });
       addToast({ type: "success", message: "Conversation added to note!" });
     } catch (err: any) {
+      let message = "Could not append to note";
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (err?.errors?.length) {
+        message = err.errors.map((e: any) => e.message || "Unknown error").join(", ");
+      } else if (err?.message) {
+        message = err.message;
+      }
       addToast({
         type: "error",
         title: "Failed to save",
-        message: err?.message || "Could not append to note",
+        message,
       });
     } finally {
       setIsAppending(false);

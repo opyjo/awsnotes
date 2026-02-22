@@ -345,10 +345,24 @@ export const notesApi = {
       throw new Error("Not authenticated. Please sign in.");
     }
 
-    const response = (await getClient().graphql({
-      query: UPDATE_NOTE,
-      variables: { noteId, input },
-    })) as GraphQLResult<{ updateNote: Note }>;
+    let response: GraphQLResult<{ updateNote: Note }>;
+    try {
+      response = (await getClient().graphql({
+        query: UPDATE_NOTE,
+        variables: { noteId, input },
+      })) as GraphQLResult<{ updateNote: Note }>;
+    } catch (error: any) {
+      // Amplify v6 may throw GraphQL errors as non-Error objects ({ errors, data })
+      if (error?.errors?.length) {
+        const messages = error.errors
+          .map((e: any) => e.message || e.errorType || "Unknown error")
+          .join(", ");
+        throw new Error(messages);
+      }
+      if (error instanceof Error) throw error;
+      throw new Error(typeof error === "string" ? error : "Failed to update note");
+    }
+
     const data = handleGraphQLResponse(response, "updateNote");
     return data.updateNote;
   },
