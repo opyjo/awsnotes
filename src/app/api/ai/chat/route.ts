@@ -39,7 +39,8 @@ const isO1Model = (model: string) => model.startsWith("o1");
 
 const streamOpenAI = async function* (
   messages: Array<{ role: "user" | "assistant"; content: string }>,
-  model: OpenAIModel
+  model: OpenAIModel,
+  systemPrompt: string
 ): AsyncGenerator<string, void, unknown> {
   if (!openai) {
     throw new Error("OpenAI API key is not configured");
@@ -51,7 +52,7 @@ const streamOpenAI = async function* (
       if (index === 0 && msg.role === "user") {
         return {
           role: "user" as const,
-          content: `${AWS_SYSTEM_PROMPT}\n\n${msg.content}`,
+          content: `${systemPrompt}\n\n${msg.content}`,
         };
       }
       return {
@@ -78,7 +79,7 @@ const streamOpenAI = async function* (
     messages: [
       {
         role: "system",
-        content: AWS_SYSTEM_PROMPT,
+        content: systemPrompt,
       },
       ...messages.map((msg) => ({
         role: msg.role as "user" | "assistant",
@@ -108,11 +109,22 @@ export const POST = async (req: NextRequest) => {
     }
 
     const body = await req.json();
-    const { messages, model }: { messages: Array<{ role: "user" | "assistant"; content: string }>; model: ModelId } = body;
+    const { messages, model, noteContext }: {
+      messages: Array<{ role: "user" | "assistant"; content: string }>;
+      model: ModelId;
+      noteContext?: string;
+    } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
         JSON.stringify({ error: "messages is required and must be an array" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (noteContext && noteContext.length > 10000) {
+      return new Response(
+        JSON.stringify({ error: "noteContext exceeds maximum allowed length" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -125,17 +137,21 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
+    const effectiveSystemPrompt = noteContext
+      ? `${AWS_SYSTEM_PROMPT}\n\n---\n\n## Note Context\n\nThe user is asking questions about the following note. Use this content as your primary reference when answering:\n\n${noteContext}`
+      : AWS_SYSTEM_PROMPT;
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
           let generator: AsyncGenerator<string, void, unknown>;
           if (modelConfig.provider === "openai") {
-            generator = streamOpenAI(messages, model as OpenAIModel);
+            generator = streamOpenAI(messages, model as OpenAIModel, effectiveSystemPrompt);
           } else if (modelConfig.provider === "moonshot") {
-            generator = streamMoonshot(messages, AWS_SYSTEM_PROMPT, model as MoonshotModel);
+            generator = streamMoonshot(messages, effectiveSystemPrompt, model as MoonshotModel);
           } else {
-            generator = streamAnthropic(messages, AWS_SYSTEM_PROMPT, model as AnthropicModel);
+            generator = streamAnthropic(messages, effectiveSystemPrompt, model as AnthropicModel);
           }
 
           for await (const chunk of generator) {

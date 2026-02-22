@@ -6,6 +6,7 @@ import { useNote } from "@/hooks/api/useNote";
 import { useNotes } from "@/hooks/api/useNotes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
+import { NoteChatPanel } from "@/components/notes/NoteChatPanel";
 import { GroupSelect } from "@/components/groups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ const EditNoteFormContent = ({ note: initialNote, noteId }: { note: Note; noteId
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +144,27 @@ const EditNoteFormContent = ({ note: initialNote, noteId }: { note: Note; noteId
               className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-200 h-9 px-3"
             >
               Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setChatOpen(true)}
+              className="text-sm text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 transition-all duration-200 h-9 px-3"
+            >
+              <svg
+                className="w-3.5 h-3.5 mr-1.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Chat
             </Button>
             <Button
               type="button"
@@ -338,6 +361,15 @@ const EditNoteFormContent = ({ note: initialNote, noteId }: { note: Note; noteId
         noteId={noteId}
         noteContent={content}
         deckId="default"
+      />
+
+      {/* Note Chat Panel */}
+      <NoteChatPanel
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        noteId={noteId}
+        noteTitle={title}
+        noteContent={content}
       />
     </div>
   );

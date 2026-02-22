@@ -8,6 +8,7 @@ import { useNotes } from "@/hooks/api/useNotes";
 import { useGroups } from "@/hooks/api/useGroups";
 import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { AIExplainPanel } from "@/components/notes/AIExplainPanel";
+import { NoteChatPanel } from "@/components/notes/NoteChatPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -23,6 +24,7 @@ const ViewNoteContent = () => {
   const { getGroupByName } = useGroups();
   const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
   const [explainPanelOpen, setExplainPanelOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [selectionPosition, setSelectionPosition] = useState<{
     x: number;
@@ -237,6 +239,27 @@ const ViewNoteContent = () => {
                     />
                   </svg>
                   Flashcards
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setChatOpen(true)}
+                  className="text-sm"
+                >
+                  <svg
+                    className="w-4 h-4 mr-1.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                  Chat
                 </Button>
                 <Link href={`/notes/${noteId}`}>
                   <Button variant="secondary" size="sm" className="text-sm">
@@ -473,6 +496,27 @@ const ViewNoteContent = () => {
                 </Link>
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setChatOpen(true)}
+                className="w-full justify-start"
+              >
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                Chat with Note
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleDelete}
@@ -557,6 +601,15 @@ const ViewNoteContent = () => {
         noteId={noteId}
         noteContent={flashcardSeed || note.content}
         deckId="default"
+      />
+
+      {/* Note Chat Panel */}
+      <NoteChatPanel
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        noteId={noteId}
+        noteTitle={note.title}
+        noteContent={note.content}
       />
     </div>
   );
