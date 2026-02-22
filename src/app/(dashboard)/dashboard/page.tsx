@@ -16,13 +16,22 @@ import { EmptyState, EmptyNotesIcon } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 
 export default function DashboardPage() {
-  const { notes, isLoading: notesLoading } = useNotes();
+  const { notes, isLoading: notesLoading, isError: notesError, error: notesErrorMsg } = useNotes();
   const { dueFlashcards, isLoading: cardsLoading } = useFlashcards();
 
   const loading = notesLoading || cardsLoading;
 
   if (loading) {
     return <DashboardSkeleton />;
+  }
+
+  if (notesError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-2 text-center">
+        <p className="text-destructive font-medium">Failed to load notes</p>
+        <p className="text-sm text-muted-foreground">{notesErrorMsg ?? "An unexpected error occurred."}</p>
+      </div>
+    );
   }
 
   const recentNotes = notes.slice(0, 5);

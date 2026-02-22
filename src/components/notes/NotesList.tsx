@@ -27,7 +27,7 @@ export const NotesList = ({
   selectedGroupId: externalSelectedGroupId,
   onSelectedGroupChange: externalOnSelectedGroupChange,
 }: NotesListProps = {}) => {
-  const { notes, isLoading: loading, deleteNote } = useNotes();
+  const { notes, isLoading: loading, isError, error, deleteNote } = useNotes();
   const { getGroupById } = useGroups();
   const { addToast } = useToast();
   const confirm = useConfirm();
@@ -97,6 +97,15 @@ export const NotesList = ({
 
   if (loading) {
     return <NotesListSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-2 text-center">
+        <p className="text-destructive font-medium">Failed to load notes</p>
+        <p className="text-sm text-muted-foreground">{error ?? "An unexpected error occurred."}</p>
+      </div>
+    );
   }
 
   return (

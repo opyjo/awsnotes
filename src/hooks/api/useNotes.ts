@@ -5,16 +5,20 @@ import type { Note, CreateNoteInput, UpdateNoteInput } from '@/types/note';
 import { useAuth } from '@/context/AuthContext';
 
 export const useNotes = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
   // Query: Get all notes
   const notesQuery = useQuery({
     queryKey: queryKeys.notes.list(),
     queryFn: () => notesApi.getNotes(),
-    enabled: !!user, // Only fetch when authenticated
+    enabled: !!user && !authLoading, // Only fetch once auth is settled
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Use isPending (not isLoading) so the loading state covers the brief window
+  // between enabled becoming true and the fetch actually starting (v5 behavior).
+  const isLoading = authLoading || (notesQuery.isPending && !notesQuery.isError);
 
   // Mutation: Create note
   const createNoteMutation = useMutation({
@@ -41,7 +45,7 @@ export const useNotes = () => {
         queryClient.setQueryData<Note[]>(
           queryKeys.notes.list(),
           [...previousNotes, optimisticNote].sort((a, b) =>
-            a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+            (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: 'base' })
           )
         );
       }
@@ -62,7 +66,7 @@ export const useNotes = () => {
           if (!old) return [newNote];
           const withoutTemp = old.filter((n) => !n.noteId.startsWith('temp-'));
           return [...withoutTemp, newNote].sort((a, b) =>
-            a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+            (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: 'base' })
           );
         }
       );
@@ -180,7 +184,7 @@ export const useNotes = () => {
     notes: notesQuery.data ?? [],
 
     // Loading states
-    isLoading: notesQuery.isLoading,
+    isLoading,
     isFetching: notesQuery.isFetching,
     isError: notesQuery.isError,
     error: notesQuery.error?.message ?? null,

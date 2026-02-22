@@ -282,25 +282,35 @@ export const notesApi = {
     let nextToken: string | null = null;
 
     do {
-      const response = (await getClient().graphql({
-        query: GET_NOTES,
-        variables: { limit: 1000, nextToken },
-      })) as GraphQLResult<{ getNotes: { items: Note[]; nextToken: string | null } }>;
-
-      if (response.errors && response.errors.length > 0) {
-        throw new Error(response.errors[0]?.message || "GraphQL query failed");
+      let response: GraphQLResult<{ getNotes: { items: Note[]; nextToken: string | null } }>;
+      try {
+        response = (await getClient().graphql({
+          query: GET_NOTES,
+          variables: { limit: 1000, nextToken },
+        })) as GraphQLResult<{ getNotes: { items: Note[]; nextToken: string | null } }>;
+      } catch (err: any) {
+        // Amplify v6 throws { errors, data } instead of returning when GraphQL errors exist.
+        // If the response still contains items, use them (partial result).
+        if (err?.data?.getNotes?.items) {
+          response = err as GraphQLResult<{ getNotes: { items: Note[]; nextToken: string | null } }>;
+        } else {
+          const messages = err?.errors?.length
+            ? err.errors.map((e: any) => e.message || e.errorType || "Unknown error").join(", ")
+            : err instanceof Error ? err.message : "Failed to fetch notes";
+          throw new Error(messages);
+        }
       }
 
       const data = response.data?.getNotes;
       if (data?.items) {
-        allNotes = allNotes.concat(data.items);
+        allNotes = allNotes.concat(data.items.filter((item): item is Note => item != null));
       }
 
       nextToken = data?.nextToken || null;
     } while (nextToken);
 
     // Sort notes alphabetically by title (case-insensitive)
-    allNotes.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+    allNotes.sort((a, b) => (a.title ?? "").localeCompare(b.title ?? "", undefined, { sensitivity: 'base' }));
 
     return allNotes;
   },
