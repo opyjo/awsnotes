@@ -136,40 +136,35 @@ export const NotesList = ({
   return (
     <div className="space-y-5 lg:space-y-6">
       <NotesContentSurface className="space-y-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {onToggleGroups && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onToggleGroups}
-                  className="2xl:hidden"
-                >
-                  <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                  Groups
-                </Button>
-              )}
-              <p className="rounded-full border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
-                {notes.length} total
-              </p>
-            </div>
-            <NotesBreadcrumbs items={breadcrumbItems} />
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Lesson Notes</h1>
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Browse, search, and organize your AWS study material in a reading-first layout.
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
+            {onToggleGroups && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onToggleGroups}
+                className="2xl:hidden"
+              >
+                <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+                Groups
+              </Button>
+            )}
+            <p className="rounded-full border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
+              {notes.length} total
             </p>
+            <NotesBreadcrumbs items={breadcrumbItems} />
+            <h1 className="min-w-0 text-xl font-semibold tracking-tight sm:text-2xl">Lesson Notes</h1>
           </div>
 
-          <Button asChild className="h-10 px-4 text-sm">
+          <Button asChild className="h-10 px-4 text-sm lg:shrink-0">
             <Link href="/notes/new">Create Note</Link>
           </Button>
         </div>
