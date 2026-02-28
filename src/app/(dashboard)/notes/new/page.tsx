@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useNotes } from "@/hooks/api/useNotes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
@@ -10,60 +10,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import {
+  NotesCommandBar,
+  NotesContentSurface,
+  NotesPageShell,
+  NotesSplitLayout,
+  NotesToolsPanel,
+  NotesToolsTrigger,
+} from "@/components/notes/layout/NotesLayout";
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    const typed = error as { message?: string; errors?: Array<{ message?: string }> };
+    if (typed.errors && Array.isArray(typed.errors) && typed.errors.length > 0) {
+      return typed.errors.map((entry) => entry.message || "Unknown error").join(", ");
+    }
+    if (typed.message) {
+      return typed.message;
+    }
+  }
+
+  return fallback;
+};
 
 export default function NewNotePage() {
   const router = useRouter();
   const { createNote } = useNotes();
   const { addToast } = useToast();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toolsPanelOpen, setToolsPanelOpen] = useState(false);
 
-  return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="space-y-3 animate-slide-in-up">
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <svg
-                className="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Create New Note
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Document your AWS study notes with rich content
-              </p>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-            Rich editor enabled
-          </div>
-        </div>
-      </div>
-      <CreateNoteForm />
-    </div>
-  );
-
-  function CreateNoteForm() {
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setSaving(true);
     setError(null);
 
@@ -79,18 +66,8 @@ export default function NewNotePage() {
         message: "Note created successfully!",
       });
       router.push("/notes");
-    } catch (err: any) {
-      // Extract error message from various error formats
-      let errorMessage = "Failed to create note";
-
-      if (err?.errors && Array.isArray(err.errors)) {
-        // GraphQL errors
-        errorMessage = err.errors.map((e: any) => e.message).join(", ");
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (typeof err === "string") {
-        errorMessage = err;
-      }
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, "Failed to create note");
 
       console.error("Error creating note:", JSON.stringify(err, null, 2));
       setError(errorMessage);
@@ -105,191 +82,112 @@ export default function NewNotePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-        {/* Title Field */}
-        <div
-          className="space-y-3 animate-slide-in-up"
-          style={{ animationDelay: "0.1s" }}
-        >
-          <Label
-            htmlFor="title"
-            className="flex items-center gap-2 text-sm font-semibold"
-          >
-            <svg
-              className="w-4 h-4 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            Title
-            <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            placeholder="AWS EC2 Instance Types"
-            className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-        </div>
+    <NotesPageShell>
+      <NotesCommandBar>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Create Lesson Note</h1>
+            <p className="text-sm text-muted-foreground">
+              Build a clean study note with rich formatting and AI-assisted tools.
+            </p>
+          </div>
 
-        {/* Group Field */}
-        <div
-          className="animate-slide-in-up relative z-20"
-          style={{ animationDelay: "0.2s" }}
-        >
-          <GroupSelect
-            value={category}
-            onChange={setCategory}
-            label="Group"
-          />
-        </div>
-
-        {/* Content Field */}
-        <div
-          className="space-y-3 animate-slide-in-up relative z-10"
-          style={{ animationDelay: "0.4s" }}
-        >
-          <Label
-            htmlFor="content"
-            className="flex items-center gap-2 text-sm font-semibold"
-          >
-            <svg
-              className="w-4 h-4 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
-            Content
-          </Label>
-          <div className="rounded-lg border-2 border-border/50 transition-all duration-200 focus-within:border-primary/50 focus-within:shadow-lg focus-within:shadow-primary/5">
-            <NoteEditor content={content} onChange={setContent} />
+          <div className="flex items-center gap-2">
+            <NotesToolsTrigger onClick={() => setToolsPanelOpen(true)} label="Guide" />
+            <Button type="button" variant="ghost" onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button type="submit" form="new-note-form" disabled={saving}>
+              {saving ? "Creating..." : "Create Note"}
+            </Button>
           </div>
         </div>
+      </NotesCommandBar>
 
-        {/* Error Message */}
-        {error && (
-          <div
-            className={cn(
-              "rounded-lg bg-destructive/10 border border-destructive/20 p-4",
-              "animate-slide-in-up flex items-start gap-3",
-            )}
-            style={{ animationDelay: "0.5s" }}
-          >
-            <svg
-              className="w-5 h-5 text-destructive shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-sm text-destructive font-medium">{error}</p>
-          </div>
-        )}
+      <NotesSplitLayout>
+        <div className="min-w-0">
+          <NotesContentSurface>
+            <form id="new-note-form" onSubmit={handleSubmit} className="space-y-7">
+              <div className="space-y-3">
+                <Label htmlFor="title" className="text-sm font-semibold">
+                  Title
+                  <span className="ml-1 text-destructive">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  required
+                  placeholder="Example: EC2 instance families and workloads"
+                  className="h-12 text-base"
+                />
+              </div>
 
-        {/* Action Buttons */}
-        <div
-          className="flex items-center justify-between pt-4 border-t border-border/50 animate-slide-in-up"
-          style={{ animationDelay: "0.6s" }}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.back()}
-            className="transition-all duration-200 hover:bg-muted"
-          >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={saving}
-            className={cn(
-              "min-w-[140px] h-11 px-6 transition-all duration-200",
-              "hover:shadow-lg hover:shadow-primary/20",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-            )}
-          >
-            {saving ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
+              <div className="space-y-3">
+                <GroupSelect value={category} onChange={setCategory} label="Group" />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="content" className="text-sm font-semibold">
+                  Content
+                </Label>
+                <div className="rounded-xl border border-border/70 bg-background/70 p-1">
+                  <NoteEditor content={content} onChange={setContent} />
+                </div>
+              </div>
+
+              {error && (
+                <div
+                  className={cn(
+                    "flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/10 p-4",
+                  )}
                 >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
+                  <svg
+                    className="mt-0.5 h-5 w-5 shrink-0 text-destructive"
+                    fill="none"
                     stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Saving...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Create Note
-              </span>
-            )}
-          </Button>
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm font-medium text-destructive">{error}</p>
+                </div>
+              )}
+            </form>
+          </NotesContentSurface>
         </div>
-      </form>
-    </div>
+
+        <NotesToolsPanel
+          title="Writing Guide"
+          description="Helpful structure for clear, exam-ready notes"
+          open={toolsPanelOpen}
+          onOpenChange={setToolsPanelOpen}
+        >
+          <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Recommended structure
+            </h3>
+            <ul className="space-y-2 text-sm leading-6 text-foreground/90">
+              <li>Start with a one-sentence concept summary.</li>
+              <li>Add key rules, limits, and AWS defaults.</li>
+              <li>Capture at least one real-world use case.</li>
+              <li>Close with pitfalls and exam-style reminders.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI tools</h3>
+            <p className="text-sm text-muted-foreground">
+              Use in-editor AI summarize/explain while writing. Chat and flashcards become available after saving.
+            </p>
+          </div>
+        </NotesToolsPanel>
+      </NotesSplitLayout>
+    </NotesPageShell>
   );
-  }
 }

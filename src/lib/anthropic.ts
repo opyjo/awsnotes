@@ -16,7 +16,7 @@ const anthropic = apiKey
 export const streamChatCompletion = async function* (
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   systemPrompt: string,
-  model: AnthropicModel = "claude-sonnet-4-5-20250929"
+  model: AnthropicModel = "claude-sonnet-4-6"
 ): AsyncGenerator<string, void, unknown> {
   if (!anthropic) {
     throw new Error("Anthropic API key is not configured");

@@ -13,13 +13,15 @@ import type { Note } from "@/types/note";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useGroups } from "@/hooks/api/useGroups";
+import { buildNoteEditHref, buildNoteViewHref } from "@/lib/notes-navigation";
 
 interface NoteCardProps {
   note: Note;
   onDelete?: (noteId: string) => void;
+  contextGroupId?: string | null;
 }
 
-export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
+export const NoteCard = ({ note, onDelete, contextGroupId = null }: NoteCardProps) => {
   const router = useRouter();
   const { getGroupByName } = useGroups();
   const group = note.category ? getGroupByName(note.category) : undefined;
@@ -34,13 +36,13 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
   };
 
   const handleCardClick = () => {
-    router.push(`/notes/${note.noteId}/view`);
+    router.push(buildNoteViewHref(note.noteId, contextGroupId));
   };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/notes/${note.noteId}`);
+    router.push(buildNoteEditHref(note.noteId, contextGroupId));
   };
 
   // Strip HTML tags for preview
@@ -58,10 +60,10 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden border-2 transition-all duration-200",
-        "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
-        "cursor-pointer bg-card/50 backdrop-blur-sm",
-        "hover:scale-[1.02] active:scale-[0.98]",
+        "group relative overflow-hidden border border-border/70 transition-all duration-200",
+        "hover:border-primary/45 hover:shadow-md hover:shadow-primary/10",
+        "cursor-pointer bg-card/80",
+        "hover:-translate-y-0.5",
       )}
       onClick={handleCardClick}
       role="button"
@@ -80,10 +82,10 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
         style={accentStyle}
       />
 
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0 space-y-1">
-            <CardTitle className="text-sm font-semibold leading-snug group-hover:text-primary transition-colors break-words">
+            <CardTitle className="text-base font-semibold leading-snug group-hover:text-primary transition-colors break-words">
               {note.title}
             </CardTitle>
             {note.category && (
@@ -169,7 +171,7 @@ export const NoteCard = ({ note, onDelete }: NoteCardProps) => {
 
       <CardContent className="pt-0 space-y-4">
         {/* Content Preview */}
-        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+        <p className="line-clamp-4 text-sm leading-6 text-muted-foreground">
           {contentPreview}
           {contentPreview.length >= 120 && "..."}
         </p>

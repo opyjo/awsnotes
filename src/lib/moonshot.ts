@@ -17,7 +17,7 @@ const moonshot = apiKey
 export const streamChatCompletion = async function* (
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   systemPrompt: string,
-  model: MoonshotModel = "kimi-k2-0711-preview"
+  model: MoonshotModel = "kimi-k2-thinking-turbo"
 ): AsyncGenerator<string, void, unknown> {
   if (!moonshot) {
     throw new Error("Moonshot API key is not configured");

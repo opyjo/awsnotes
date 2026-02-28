@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getAuthToken } from "@/lib/aws/cognito";
-import type { ChatMessage, ChatState, ModelId } from "@/types/chat";
+import {
+  DEFAULT_CHAT_MODEL,
+  isModelId,
+  type ChatMessage,
+  type ChatState,
+  type ModelId,
+} from "@/types/chat";
 
-const DEFAULT_MODEL: ModelId = "kimi-k2-thinking";
 const MAX_CONTEXT_CHARS = 8000;
 
 interface UseNoteChatParams {
@@ -40,7 +45,16 @@ const loadFromStorage = (key: string): ChatState | null => {
   try {
     const stored = globalThis.localStorage.getItem(key);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored) as ChatState;
+      const selectedModel =
+        typeof parsed.selectedModel === "string" && isModelId(parsed.selectedModel)
+          ? parsed.selectedModel
+          : DEFAULT_CHAT_MODEL;
+
+      return {
+        messages: Array.isArray(parsed.messages) ? parsed.messages : [],
+        selectedModel,
+      };
     }
   } catch (error) {
     console.error("Error loading note chat from storage:", error);
@@ -61,7 +75,7 @@ export const useNoteChat = ({ noteId, noteTitle, noteContent }: UseNoteChatParam
   const storageKey = `note-chat-${noteId}`;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_CHAT_MODEL);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,13 +87,13 @@ export const useNoteChat = ({ noteId, noteTitle, noteContent }: UseNoteChatParam
       setSelectedModel(stored.selectedModel);
     } else {
       setMessages([]);
-      setSelectedModel(DEFAULT_MODEL);
+      setSelectedModel(DEFAULT_CHAT_MODEL);
     }
   }, [storageKey]);
 
   // Save to storage when messages or model changes
   useEffect(() => {
-    if (messages.length > 0 || selectedModel !== DEFAULT_MODEL) {
+    if (messages.length > 0 || selectedModel !== DEFAULT_CHAT_MODEL) {
       saveToStorage(storageKey, { messages, selectedModel });
     }
   }, [messages, selectedModel, storageKey]);
@@ -191,12 +205,12 @@ export const useNoteChat = ({ noteId, noteTitle, noteContent }: UseNoteChatParam
         setIsLoading(false);
       }
     },
-    [messages, selectedModel, isLoading, noteId, noteTitle, noteContent]
+    [messages, selectedModel, isLoading, noteTitle, noteContent]
   );
 
   const clearMessages = useCallback(() => {
     setMessages([]);
-    setSelectedModel(DEFAULT_MODEL);
+    setSelectedModel(DEFAULT_CHAT_MODEL);
     if (typeof globalThis.window !== "undefined") {
       globalThis.localStorage.removeItem(storageKey);
     }

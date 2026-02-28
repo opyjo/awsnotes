@@ -9,6 +9,9 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   isLoading: boolean;
   suggestedQuestions?: string[];
+  compactSuggestedQuestions?: boolean;
+  suggestedQuestionLimit?: number;
+  showTopBorder?: boolean;
 }
 
 export const ChatInput = ({
@@ -20,9 +23,19 @@ export const ChatInput = ({
     "How does Auto Scaling work?",
     "What are the differences between SQS and SNS?",
   ],
+  compactSuggestedQuestions = true,
+  suggestedQuestionLimit = 3,
+  showTopBorder = true,
 }: ChatInputProps) => {
   const [input, setInput] = React.useState("");
+  const [showAllSuggestions, setShowAllSuggestions] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  React.useEffect(() => {
+    if (input.length > 0) {
+      setShowAllSuggestions(false);
+    }
+  }, [input.length]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -45,26 +58,54 @@ export const ChatInput = ({
     textareaRef.current?.focus();
   };
 
+  const shouldShowSuggestions = suggestedQuestions.length > 0 && input.length === 0;
+  const canToggleSuggestions =
+    compactSuggestedQuestions && suggestedQuestions.length > suggestedQuestionLimit;
+  const visibleSuggestions =
+    canToggleSuggestions && !showAllSuggestions
+      ? suggestedQuestions.slice(0, suggestedQuestionLimit)
+      : suggestedQuestions;
+
   return (
-    <div className="border-t border-border bg-background">
-      {suggestedQuestions.length > 0 && input.length === 0 && (
-        <div className="p-4 border-b border-border">
-          <p className="text-xs text-muted-foreground mb-2">Suggested questions:</p>
-          <div className="flex flex-wrap gap-2">
-            {suggestedQuestions.map((question, index) => (
+    <div
+      className={cn(
+        "bg-background/95",
+        showTopBorder && "border-t border-border/60"
+      )}
+    >
+      {shouldShowSuggestions && (
+        <div className="border-b border-border/60 px-3 pb-2 pt-3 sm:px-4">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Quick Prompts
+            </p>
+            {canToggleSuggestions && (
               <button
-                key={index}
+                type="button"
+                onClick={() => setShowAllSuggestions((prev) => !prev)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                {showAllSuggestions ? "Less" : "More"}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {visibleSuggestions.map((question, index) => (
+              <button
+                key={`${question}-${index}`}
                 type="button"
                 onClick={() => handleSuggestedClick(question)}
-                className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                className="max-w-full rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                title={question}
               >
-                {question}
+                <span className="block truncate">{question}</span>
               </button>
             ))}
           </div>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="p-4">
+
+      <form onSubmit={handleSubmit} className="px-3 pb-3 pt-2 sm:px-4 sm:pb-4 sm:pt-3">
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Textarea
@@ -75,11 +116,11 @@ export const ChatInput = ({
               placeholder="Ask about AWS concepts..."
               disabled={isLoading}
               rows={1}
-              className="resize-none min-h-[44px] max-h-[120px] text-sm"
+              className="resize-none min-h-[40px] max-h-[112px] text-sm leading-relaxed"
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = "auto";
-                target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                target.style.height = `${Math.min(target.scrollHeight, 112)}px`;
               }}
             />
           </div>
@@ -87,7 +128,7 @@ export const ChatInput = ({
             type="submit"
             disabled={!input.trim() || isLoading}
             size="icon"
-            className="h-[44px] w-[44px] flex-shrink-0"
+            className="h-[40px] w-[40px] flex-shrink-0"
             aria-label="Send message"
           >
             {isLoading ? (
@@ -121,7 +162,7 @@ export const ChatInput = ({
             )}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="mt-1.5 text-xs text-muted-foreground">
           Press Enter to send, Shift+Enter for new line
         </p>
       </form>

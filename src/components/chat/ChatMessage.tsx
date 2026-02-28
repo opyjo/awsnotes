@@ -443,15 +443,16 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
         message: "Note saved successfully!",
       });
       onSaveToNotes?.(message.content);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Extract error message from various error formats
       let errorMessage = "Failed to save note";
+      const maybeError = error as { errors?: Array<{ message?: string }>; message?: string };
 
-      if (error?.errors && Array.isArray(error.errors)) {
+      if (Array.isArray(maybeError.errors)) {
         // GraphQL errors
-        errorMessage = error.errors.map((e: any) => e.message).join(", ");
-      } else if (error?.message) {
-        errorMessage = error.message;
+        errorMessage = maybeError.errors.map((e) => e.message || "Unknown error").join(", ");
+      } else if (typeof maybeError.message === "string") {
+        errorMessage = maybeError.message;
       } else if (typeof error === "string") {
         errorMessage = error;
       }
@@ -472,7 +473,7 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
     <>
       <div
         className={cn(
-          "flex gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2",
+          "mb-5 flex gap-3 animate-in fade-in slide-in-from-bottom-2 sm:mb-6",
           isUser ? "justify-end" : "justify-start"
         )}
       >
@@ -496,20 +497,24 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
 
         <div
           className={cn(
-            "flex flex-col gap-1 max-w-[90%] md:max-w-[80%]",
-            isUser && "items-end"
+            "flex min-w-0 flex-col gap-1.5",
+            isUser
+              ? "max-w-[86%] items-end sm:max-w-[78%] lg:max-w-[70%]"
+              : "max-w-[90%] sm:max-w-[86%] lg:max-w-[74%]"
           )}
         >
           <div
             className={cn(
               "rounded-xl px-4 py-3 shadow-sm",
               isUser
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-card border border-border rounded-bl-sm"
+                ? "rounded-br-sm border border-primary/20 bg-primary/90 text-primary-foreground"
+                : "rounded-bl-sm border border-border/80 bg-card/95"
             )}
           >
             {isUser ? (
-              <p className="whitespace-pre-wrap break-words text-sm">{message.content}</p>
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {message.content}
+              </p>
             ) : (
               <div className="text-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                 {renderMarkdown(message.content)}
@@ -517,15 +522,15 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+          <div className="flex flex-wrap items-center gap-1.5 px-1 text-xs text-muted-foreground sm:gap-2">
             {modelBadge && (
-              <span className="px-2 py-0.5 rounded-full bg-primary/5 border border-primary/20 text-xs font-medium">
+              <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-medium">
                 {modelBadge}
               </span>
             )}
             <span>{formatTimestamp(message.timestamp)}</span>
             {!isUser && (
-              <>
+              <div className="ml-1 flex items-center gap-1">
                 <div className="relative group">
                   <button
                     type="button"
@@ -542,7 +547,7 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
                       try {
                         await navigator.clipboard.write([clipboardItem]);
                         addToast({ type: "success", message: "Copied to clipboard!" });
-                      } catch (err) {
+                      } catch {
                         // Fallback to plain text if ClipboardItem API fails
                         await navigator.clipboard.writeText(message.content);
                         addToast({ type: "success", message: "Copied to clipboard!" });
@@ -598,7 +603,7 @@ export const ChatMessage = ({ message, onSaveToNotes }: ChatMessageProps) => {
                     Save to notes
                   </span>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

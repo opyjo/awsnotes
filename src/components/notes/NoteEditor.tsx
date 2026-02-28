@@ -85,7 +85,7 @@ export const NoteEditor = ({
     },
     editorProps: {
       attributes: {
-        class: "focus:outline-none min-h-[300px] p-4",
+        class: "focus:outline-none min-h-[360px] px-5 py-4",
       },
     },
   });
@@ -257,7 +257,7 @@ export const NoteEditor = ({
           </Button>
         </div>
       )}
-      <div className="flex items-center gap-2 border-b p-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-3 py-2.5">
         <div className="flex items-center gap-2">
           <Button
             type="button"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNotes } from "@/hooks/api/useNotes";
 import { useGroups } from "@/hooks/api/useGroups";
+import { NotesBreadcrumbs, type NotesBreadcrumbItem } from "@/components/notes/layout/NotesBreadcrumbs";
 import { NoteCard } from "./NoteCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,56 +15,80 @@ import {
 import { NotesListSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { NotesContentSurface } from "@/components/notes/layout/NotesLayout";
 import Link from "next/link";
-
-const UNGROUPED_ID = "__ungrouped__";
+import {
+  buildNotesListHref,
+  resolveNotesGroupContext,
+} from "@/lib/notes-navigation";
 
 interface NotesListProps {
   selectedGroupId?: string | null;
   onSelectedGroupChange?: (groupId: string | null) => void;
+  onToggleGroups?: () => void;
 }
 
 export const NotesList = ({
   selectedGroupId: externalSelectedGroupId,
   onSelectedGroupChange: externalOnSelectedGroupChange,
+  onToggleGroups,
 }: NotesListProps = {}) => {
   const { notes, isLoading: loading, isError, error, deleteNote } = useNotes();
-  const { getGroupById } = useGroups();
+  const { groups, isLoading: groupsLoading } = useGroups();
   const { addToast } = useToast();
   const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string | null>(null);
 
-  // Use external state if provided, otherwise use internal state
-  const selectedGroupId = externalSelectedGroupId !== undefined ? externalSelectedGroupId : internalSelectedGroupId;
+  const selectedGroupId =
+    externalSelectedGroupId !== undefined ? externalSelectedGroupId : internalSelectedGroupId;
   const setSelectedGroupId = externalOnSelectedGroupChange || setInternalSelectedGroupId;
 
-  // Get selected group name for filtering
-  const getSelectedGroupName = (): string | null | undefined => {
-    if (selectedGroupId === null) return undefined; // All notes
-    if (selectedGroupId === UNGROUPED_ID) return null; // Ungrouped
-    const group = getGroupById(selectedGroupId);
-    return group?.name;
-  };
+  const groupContext = useMemo(
+    () =>
+      resolveNotesGroupContext(selectedGroupId, groups, {
+        allowUnresolved: groupsLoading,
+      }),
+    [selectedGroupId, groups, groupsLoading],
+  );
 
-  const selectedGroupName = getSelectedGroupName();
+  const selectedGroupName = groupContext.isAllNotes
+    ? undefined
+    : groupContext.isPending
+      ? undefined
+      : groupContext.isUngrouped
+      ? null
+      : groupContext.label;
+
+  const breadcrumbItems = useMemo<NotesBreadcrumbItem[]>(() => {
+    if (groupContext.isAllNotes) {
+      return [{ label: "All Notes", current: true }];
+    }
+
+    return [
+      {
+        label: "All Notes",
+        href: buildNotesListHref(),
+      },
+      {
+        label: groupContext.label,
+        color: groupContext.color,
+        current: true,
+      },
+    ];
+  }, [groupContext]);
 
   const filteredNotes = notes.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.content.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Group filter logic
     let matchesGroup = true;
     if (selectedGroupName === null) {
-      // Ungrouped - notes without category
       matchesGroup = !note.category;
     } else if (selectedGroupName !== undefined) {
-      // Specific group selected
-      matchesGroup =
-        note.category?.toLowerCase() === selectedGroupName.toLowerCase();
+      matchesGroup = note.category?.toLowerCase() === selectedGroupName.toLowerCase();
     }
-    // If selectedGroupName is undefined, show all notes
 
     return matchesSearch && matchesGroup;
   });
@@ -78,20 +103,20 @@ export const NotesList = ({
       variant: "destructive",
     });
 
-    if (confirmed) {
-      try {
-        await deleteNote(noteId);
-        addToast({
-          type: "success",
-          message: "Note deleted successfully",
-        });
-      } catch (error) {
-        addToast({
-          type: "error",
-          title: "Error",
-          message: "Failed to delete note. Please try again.",
-        });
-      }
+    if (!confirmed) return;
+
+    try {
+      await deleteNote(noteId);
+      addToast({
+        type: "success",
+        message: "Note deleted successfully",
+      });
+    } catch {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to delete note. Please try again.",
+      });
     }
   };
 
@@ -101,43 +126,94 @@ export const NotesList = ({
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 space-y-2 text-center">
-        <p className="text-destructive font-medium">Failed to load notes</p>
+      <div className="flex flex-col items-center justify-center space-y-2 py-12 text-center">
+        <p className="font-medium text-destructive">Failed to load notes</p>
         <p className="text-sm text-muted-foreground">{error ?? "An unexpected error occurred."}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Notes</h1>
-        <Button asChild>
-          <Link href="/notes/new">Create Note</Link>
-        </Button>
-      </div>
+    <div className="space-y-5 lg:space-y-6">
+      <NotesContentSurface className="space-y-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              {onToggleGroups && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleGroups}
+                  className="2xl:hidden"
+                >
+                  <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                  Groups
+                </Button>
+              )}
+              <p className="rounded-full border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
+                {notes.length} total
+              </p>
+            </div>
+            <NotesBreadcrumbs items={breadcrumbItems} />
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Lesson Notes</h1>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              Browse, search, and organize your AWS study material in a reading-first layout.
+            </p>
+          </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="sm:max-w-sm"
-        />
-        {/* Group indicator when a specific group is selected */}
-        {selectedGroupId && selectedGroupId !== UNGROUPED_ID && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 border border-primary/20 text-sm">
-            <span className="text-primary font-medium">
-              {getGroupById(selectedGroupId)?.name || "Group"}
-            </span>
+          <Button asChild className="h-10 px-4 text-sm">
+            <Link href="/notes/new">Create Note</Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="relative">
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
+              />
+            </svg>
+            <Input
+              placeholder="Search lesson notes by title or content"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="h-11 pl-9"
+            />
           </div>
-        )}
-        {selectedGroupId === UNGROUPED_ID && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted border border-border text-sm">
-            <span className="text-muted-foreground font-medium">Ungrouped</span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {(searchQuery || !groupContext.isAllNotes) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedGroupId(null);
+                }}
+              >
+                Clear
+              </Button>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </NotesContentSurface>
 
       {notes.length === 0 ? (
         <EmptyState
@@ -163,9 +239,14 @@ export const NotesList = ({
           }}
         />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filteredNotes.map((note) => (
-            <NoteCard key={note.noteId} note={note} onDelete={handleDelete} />
+            <NoteCard
+              key={note.noteId}
+              note={note}
+              onDelete={handleDelete}
+              contextGroupId={groupContext.groupId}
+            />
           ))}
         </div>
       )}

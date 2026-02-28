@@ -89,8 +89,8 @@ export const ModelSelector = ({
         {model.provider === "openai" ? <OpenAIIcon /> : model.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
       </span>
       <div className="flex-1 min-w-0">
-        <div className="font-medium truncate">{model.name}</div>
-        <div className="text-xs text-muted-foreground truncate">{model.description}</div>
+        <div className="font-medium leading-snug">{model.name}</div>
+        <div className="text-xs text-muted-foreground leading-snug">{model.description}</div>
       </div>
       {selectedModel === model.id && (
         <svg
@@ -116,7 +116,7 @@ export const ModelSelector = ({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm",
+          "flex w-full max-w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm sm:min-w-[200px]",
           "hover:bg-accent hover:text-accent-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "transition-colors cursor-pointer"
@@ -127,9 +127,11 @@ export const ModelSelector = ({
         <span className="text-muted-foreground">
           {selectedModelConfig.provider === "openai" ? <OpenAIIcon /> : selectedModelConfig.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
         </span>
-        <span className="font-medium">{selectedModelConfig.name}</span>
+        <span className="min-w-0 flex-1 truncate text-left font-medium">
+          {selectedModelConfig.name}
+        </span>
         <svg
-          className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
+          className={cn("h-4 w-4 flex-shrink-0 transition-transform", isOpen && "rotate-180")}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -146,7 +148,7 @@ export const ModelSelector = ({
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full mt-1 z-20 w-72 max-h-96 overflow-y-auto rounded-md border border-input bg-background shadow-lg">
+          <div className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[min(92vw,20rem)] overflow-y-auto rounded-md border border-input bg-background shadow-lg sm:left-0 sm:right-auto sm:w-80">
             <div className="px-3 py-2 border-b border-border">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <OpenAIIcon />
