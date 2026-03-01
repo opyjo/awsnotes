@@ -13,6 +13,8 @@ const anthropic = apiKey
     })
   : null;
 
+const ANTHROPIC_CHAT_MAX_TOKENS = 16384;
+
 export const streamChatCompletion = async function* (
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   systemPrompt: string,
@@ -24,7 +26,7 @@ export const streamChatCompletion = async function* (
 
   const stream = await anthropic.messages.stream({
     model,
-    max_tokens: 4096,
+    max_tokens: ANTHROPIC_CHAT_MAX_TOKENS,
     system: systemPrompt,
     messages: messages.map((msg) => ({
       role: msg.role === "assistant" ? "assistant" : "user",

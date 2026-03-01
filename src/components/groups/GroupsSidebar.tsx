@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, type MouseEvent } from "react";
+import Link from "next/link";
 import { useGroups } from "@/hooks/api/useGroups";
 import { GroupModal } from "./GroupModal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { NOTES_UNGROUPED_ID } from "@/lib/notes-navigation";
+import { buildNoteViewHref, NOTES_UNGROUPED_ID } from "@/lib/notes-navigation";
 import type { Note } from "@/types/note";
 import type { Group } from "@/types/group";
 
@@ -37,6 +38,7 @@ export const GroupsSidebar = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string | null>(null);
+  const [expandedGroupIds, setExpandedGroupIds] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(() => {
     if (typeof window === "undefined" || isDrawer) return false;
     try {
@@ -84,6 +86,9 @@ export const GroupsSidebar = ({
     return notes.filter((n) => n.category?.toLowerCase() === groupName.toLowerCase()).length;
   };
 
+  const getGroupNotes = (groupName: string): Note[] =>
+    notes.filter((note) => note.category?.toLowerCase() === groupName.toLowerCase());
+
   const handleCreateGroup = () => {
     setEditingGroup(null);
     setModalOpen(true);
@@ -97,6 +102,21 @@ export const GroupsSidebar = ({
 
   const handleSelectGroup = (groupId: string | null) => {
     setSelectedGroupId(groupId);
+    if (isDrawer) {
+      setOpen(false);
+    }
+  };
+
+  const handleToggleGroupExpanded = (groupId: string, event: MouseEvent) => {
+    event.stopPropagation();
+    setExpandedGroupIds((current) =>
+      current.includes(groupId)
+        ? current.filter((id) => id !== groupId)
+        : [...current, groupId],
+    );
+  };
+
+  const handleNoteClick = () => {
     if (isDrawer) {
       setOpen(false);
     }
@@ -234,63 +254,125 @@ export const GroupsSidebar = ({
 
         {groups.map((group) => (
           <div key={group.id} className="group/item relative">
-            <button
-              type="button"
-              onClick={() => handleSelectGroup(group.id)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                "hover:bg-accent/60",
-                selectedGroupId === group.id
-                  ? "bg-primary/10 font-medium text-primary"
-                  : "text-foreground/75",
-                collapsed ? "justify-center px-0" : "pr-9",
-              )}
-              aria-label={group.name}
-            >
-              <span
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: group.color || "hsl(var(--muted))" }}
-              >
-                {!group.color && (
-                  <svg className="h-2.5 w-2.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                    />
-                  </svg>
-                )}
-              </span>
-              {!collapsed && (
-                <>
-                  <span className="flex-1 truncate text-left">{group.name}</span>
-                  <span className="text-xs text-muted-foreground">{getNotesCount(group.name)}</span>
-                </>
-              )}
-            </button>
+            {(() => {
+              const groupNotes = getGroupNotes(group.name);
+              const isExpanded = expandedGroupIds.includes(group.id);
 
-            {!collapsed && (
-              <button
-                type="button"
-                onClick={(event) => handleEditGroup(group, event)}
-                className={cn(
-                  "absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5",
-                  "text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground",
-                  "group-hover/item:opacity-100",
-                )}
-                aria-label={`Edit ${group.name}`}
-              >
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>
-            )}
+              return (
+                <>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectGroup(group.id)}
+                      className={cn(
+                        "flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                        "hover:bg-accent/60",
+                        selectedGroupId === group.id
+                          ? "bg-primary/10 font-medium text-primary"
+                          : "text-foreground/75",
+                        collapsed && "justify-center px-0",
+                      )}
+                      aria-label={group.name}
+                    >
+                      <span
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                        style={{ backgroundColor: group.color || "hsl(var(--muted))" }}
+                      >
+                        {!group.color && (
+                          <svg className="h-2.5 w-2.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1 truncate text-left">{group.name}</span>
+                          <span className="text-xs text-muted-foreground">{groupNotes.length}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {!collapsed && (
+                      <button
+                        type="button"
+                        onClick={(event) => handleToggleGroupExpanded(group.id, event)}
+                        className={cn(
+                          "rounded-md p-1.5 text-muted-foreground transition-colors",
+                          "hover:bg-accent hover:text-foreground",
+                          isExpanded && "text-foreground",
+                        )}
+                        aria-label={`${isExpanded ? "Collapse" : "Expand"} ${group.name}`}
+                        aria-expanded={isExpanded}
+                      >
+                        <svg
+                          className={cn("h-3.5 w-3.5 transition-transform", isExpanded && "rotate-90")}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    )}
+
+                    {!collapsed && (
+                      <button
+                        type="button"
+                        onClick={(event) => handleEditGroup(group, event)}
+                        className={cn(
+                          "rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity",
+                          "hover:bg-accent hover:text-foreground",
+                          "group-hover/item:opacity-100 focus-visible:opacity-100",
+                        )}
+                        aria-label={`Edit ${group.name}`}
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {!collapsed && isExpanded && (
+                    <div className="ml-8 mt-1 space-y-1 border-l border-border/45 pl-3">
+                      {groupNotes.length > 0 ? (
+                        groupNotes.map((note) => (
+                          <Link
+                            key={note.noteId}
+                            href={buildNoteViewHref(note.noteId, group.id)}
+                            onClick={handleNoteClick}
+                            className={cn(
+                              "block rounded-md px-2 py-1.5 text-xs text-foreground/70 transition-colors",
+                              "hover:bg-accent/55 hover:text-foreground",
+                            )}
+                            title={note.title}
+                          >
+                            <span className="block truncate">{note.title}</span>
+                          </Link>
+                        ))
+                      ) : (
+                        <p className="px-2 py-1.5 text-xs text-muted-foreground">No notes</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         ))}
       </nav>
