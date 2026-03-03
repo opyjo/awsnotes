@@ -17,6 +17,7 @@ interface NoteChatPanelProps {
   noteId: string;
   noteTitle: string;
   noteContent: string;
+  noteCategory?: string;
 }
 
 const escapeHtml = (text: string) =>
@@ -31,6 +32,7 @@ export const NoteChatPanel = ({
   noteId,
   noteTitle,
   noteContent,
+  noteCategory,
 }: NoteChatPanelProps) => {
   const { messages, isLoading, error, sendMessage, clearMessages } = useNoteChat({
     noteId,
@@ -154,7 +156,7 @@ export const NoteChatPanel = ({
 
       const sectionHtml = `<hr><h2>Chat Session · ${date}</h2>${conversationHtml}`;
 
-      await updateNote(noteId, { content: (noteContent || "") + sectionHtml });
+      await updateNote(noteId, { title: noteTitle, content: (noteContent || "") + sectionHtml, category: noteCategory });
       addToast({ type: "success", message: "Conversation added to note!" });
     } catch (err: any) {
       let message = "Could not append to note";

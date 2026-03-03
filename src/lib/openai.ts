@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -12,6 +13,18 @@ const openai = apiKey
     })
   : null;
 
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+
+if (!anthropicApiKey) {
+  console.warn("ANTHROPIC_API_KEY is not set. Claude AI features will not work.");
+}
+
+const anthropic = anthropicApiKey
+  ? new Anthropic({
+      apiKey: anthropicApiKey,
+    })
+  : null;
+
 export interface Flashcard {
   front: string;
   back: string;
@@ -21,12 +34,11 @@ export const generateFlashcards = async (
   noteContent: string,
   count: number = 5
 ): Promise<Flashcard[]> => {
-  if (!openai) {
-    throw new Error("OpenAI API key is not configured");
+  if (!anthropic) {
+    throw new Error("Anthropic API key is not configured");
   }
 
-  // Validate count
-  const flashcardCount = Math.max(1, Math.min(20, count)); // Clamp between 1 and 20
+  const flashcardCount = Math.max(1, Math.min(20, count));
 
   const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards that mirror real AWS SAA-C03 exam questions.
 
@@ -57,35 +69,29 @@ Note content:
 ${noteContent.substring(0, 3000)}`;
 
   try {
-    // Adjust max_tokens based on count (roughly 300 tokens per flashcard)
-    const maxTokens = Math.min(4000, Math.max(1000, flashcardCount * 300));
+    const maxTokens = Math.max(1000, flashcardCount * 300);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens,
+      system: "You are an expert AWS Solutions Architect Associate (SAA-C03) exam coach. Generate flashcards that mirror the real exam format: scenario-based questions that test architectural decision-making, service selection under specific constraints, and understanding of AWS best practices. Never generate simple definition-style questions. Always return valid JSON only.",
       messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam coach. Generate flashcards that mirror the real exam format: scenario-based questions that test architectural decision-making, service selection under specific constraints, and understanding of AWS best practices. Never generate simple definition-style questions. Always return valid JSON only.",
-        },
         {
           role: "user",
           content: prompt,
         },
       ],
       temperature: 0.7,
-      max_tokens: maxTokens,
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from OpenAI");
+    const content = message.content[0];
+    if (content.type !== "text" || !content.text) {
+      throw new Error("No response from Claude");
     }
 
-    // Extract JSON from response (handle cases where there might be markdown code blocks)
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    const jsonMatch = content.text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      throw new Error("Invalid response format from OpenAI");
+      throw new Error("Invalid response format from Claude");
     }
 
     const flashcards = JSON.parse(jsonMatch[0]) as Flashcard[];

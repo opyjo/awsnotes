@@ -329,6 +329,7 @@ const EditNoteFormContent = ({
         noteId={noteId}
         noteTitle={title}
         noteContent={content}
+        noteCategory={category}
       />
     </NotesPageShell>
   );

@@ -470,6 +470,7 @@ const ViewNoteContent = () => {
         noteId={noteId}
         noteTitle={note.title}
         noteContent={note.content}
+        noteCategory={note.category}
       />
     </NotesPageShell>
   );
