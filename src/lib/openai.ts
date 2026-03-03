@@ -28,20 +28,29 @@ export const generateFlashcards = async (
   // Validate count
   const flashcardCount = Math.max(1, Math.min(20, count)); // Clamp between 1 and 20
 
-  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards in Q&A format specifically tailored for the AWS Certified Solutions Architect - Associate (SAA-C03) exam.
+  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards that mirror real AWS SAA-C03 exam questions.
 
-Focus on:
-- Key concepts, services, and design patterns frequently tested in SAA-C03
-- Real exam scenarios and use cases
-- Service comparisons (e.g., EFS vs EBS vs S3)
-- Cost optimization and performance considerations
-- Security and compliance best practices
-- High availability and fault tolerance patterns
+QUESTION FORMAT RULES:
+- Every question MUST be scenario-based (e.g., "A company needs to migrate a 50TB database with minimal downtime. Which AWS service and migration strategy should they use?")
+- NEVER generate simple definition questions like "What is S3?" or "What does IAM stand for?"
+- Questions should present a business scenario with specific constraints (cost, performance, availability, security, compliance) and ask which AWS service or architecture best fits
+
+ANSWER FORMAT RULES:
+- State the correct service/architecture choice first
+- Explain WHY it's correct in 1-2 sentences
+- Mention 1 common wrong answer and why it's wrong (exam trap)
+
+COVER THESE SAA-C03 AREAS (when relevant to the note content):
+- Service selection under constraints (cost optimization, performance, availability, security)
+- Architecture trade-offs and comparisons (e.g., ALB vs NLB, RDS vs DynamoDB, EFS vs EBS)
+- Well-Architected Framework pillars applied to real scenarios
+- Common exam traps and misconceptions (e.g., S3 eventual consistency exceptions, encryption defaults)
+- Edge cases: service limits, regional availability, default behaviors
 
 Return ONLY a valid JSON array with this exact format:
 [
-  { "front": "question", "back": "answer" },
-  { "front": "question", "back": "answer" }
+  { "front": "scenario-based question", "back": "correct answer with reasoning and common trap" },
+  { "front": "scenario-based question", "back": "correct answer with reasoning and common trap" }
 ]
 
 Note content:
@@ -57,7 +66,7 @@ ${noteContent.substring(0, 3000)}`;
         {
           role: "system",
           content:
-            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam tutor. Generate concise, exam-focused flashcards from study notes that help students pass the SAA-C03 certification. Always return valid JSON only.",
+            "You are an expert AWS Solutions Architect Associate (SAA-C03) exam coach. Generate flashcards that mirror the real exam format: scenario-based questions that test architectural decision-making, service selection under specific constraints, and understanding of AWS best practices. Never generate simple definition-style questions. Always return valid JSON only.",
         },
         {
           role: "user",
