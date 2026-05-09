@@ -90,6 +90,20 @@ export class AwsStudyNotesStack extends cdk.Stack {
       sortKey: { name: "nextReviewDate", type: dynamodb.AttributeType.STRING },
     });
 
+    const videosTable = new dynamodb.Table(this, "VideosTable", {
+      tableName: "aws-study-notes-videos",
+      partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    videosTable.addGlobalSecondaryIndex({
+      indexName: "category-videoId-index",
+      partitionKey: { name: "category", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "videoId", type: dynamodb.AttributeType.STRING },
+    });
+
     // ==========================================
     // 3. S3 Bucket for Images
     // ==========================================
@@ -180,6 +194,7 @@ export class AwsStudyNotesStack extends cdk.Stack {
       "ReviewLambdaDataSource",
       reviewFlashcardLambda,
     );
+    const videosDs = api.addDynamoDbDataSource("VideosDataSource", videosTable);
 
     // ==========================================
     // Resolvers for Notes
@@ -677,6 +692,210 @@ null
         #end
         $util.toJson($ctx.result)
       `),
+    });
+
+    // ==========================================
+    // Resolvers for Lesson Videos (global catalog)
+    // ==========================================
+
+    videosDs.createResolver("GetVideosResolver", {
+      typeName: "Query",
+      fieldName: "getVideos",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "query": {
+            "expression": "PK = :pk AND begins_with(SK, :prefix)",
+            "expressionValues": {
+              ":pk": { "S": "GLOBAL" },
+              ":prefix": { "S": "VIDEO#" }
+            }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result.items)`,
+      ),
+    });
+
+    videosDs.createResolver("GetVideoResolver", {
+      typeName: "Query",
+      fieldName: "getVideo",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($videoId = $ctx.arguments.videoId)
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "PK": { "S": "GLOBAL" },
+            "SK": { "S": "VIDEO#$videoId" }
+          },
+          "consistentRead": true
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result)`,
+      ),
+    });
+
+    videosDs.createResolver("GetVideosByCategoryResolver", {
+      typeName: "Query",
+      fieldName: "getVideosByCategory",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($category = $ctx.arguments.category)
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "index": "category-videoId-index",
+          "query": {
+            "expression": "category = :cat",
+            "expressionValues": {
+              ":cat": $util.dynamodb.toDynamoDBJson($category)
+            }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result.items)`,
+      ),
+    });
+
+    videosDs.createResolver("CreateVideoResolver", {
+      typeName: "Mutation",
+      fieldName: "createVideo",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($videoId = $util.autoId())
+        #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
+        {
+          "version": "2017-02-28",
+          "operation": "PutItem",
+          "key": {
+            "PK": { "S": "GLOBAL" },
+            "SK": $util.dynamodb.toDynamoDBJson("VIDEO#$videoId")
+          },
+          "attributeValues": {
+            "videoId": $util.dynamodb.toDynamoDBJson($videoId),
+            "title": $util.dynamodb.toDynamoDBJson($input.title),
+            "category": $util.dynamodb.toDynamoDBJson($input.category),
+            "s3Key": $util.dynamodb.toDynamoDBJson($input.s3Key),
+            "createdAt": $util.dynamodb.toDynamoDBJson($now),
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.description)
+            ,"description": $util.dynamodb.toDynamoDBJson($input.description)
+            #end
+            #if($input.thumbnailKey)
+            ,"thumbnailKey": $util.dynamodb.toDynamoDBJson($input.thumbnailKey)
+            #end
+            #if(!$util.isNull($input.duration))
+            ,"duration": $util.dynamodb.toDynamoDBJson($input.duration)
+            #end
+            #if(!$util.isNull($input.order))
+            ,"order": $util.dynamodb.toDynamoDBJson($input.order)
+            #end
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type, $ctx.result)
+#end
+$util.toJson($ctx.result)`,
+      ),
+    });
+
+    videosDs.createResolver("UpdateVideoResolver", {
+      typeName: "Mutation",
+      fieldName: "updateVideo",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($videoId = $ctx.arguments.videoId)
+        #set($input = $ctx.arguments.input)
+        #set($expParts = [])
+        #set($expValues = {":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())})
+        $util.qr($expParts.add("updatedAt = :updatedAt"))
+        #if($input.title)
+          $util.qr($expParts.add("title = :title"))
+          $util.qr($expValues.put(":title", $util.dynamodb.toDynamoDBJson($input.title)))
+        #end
+        #if($input.description)
+          $util.qr($expParts.add("description = :description"))
+          $util.qr($expValues.put(":description", $util.dynamodb.toDynamoDBJson($input.description)))
+        #end
+        #if($input.category)
+          $util.qr($expParts.add("category = :category"))
+          $util.qr($expValues.put(":category", $util.dynamodb.toDynamoDBJson($input.category)))
+        #end
+        #if($input.s3Key)
+          $util.qr($expParts.add("s3Key = :s3Key"))
+          $util.qr($expValues.put(":s3Key", $util.dynamodb.toDynamoDBJson($input.s3Key)))
+        #end
+        #if($input.thumbnailKey)
+          $util.qr($expParts.add("thumbnailKey = :thumbnailKey"))
+          $util.qr($expValues.put(":thumbnailKey", $util.dynamodb.toDynamoDBJson($input.thumbnailKey)))
+        #end
+        #if(!$util.isNull($input.duration))
+          $util.qr($expParts.add("duration = :duration"))
+          $util.qr($expValues.put(":duration", $util.dynamodb.toDynamoDBJson($input.duration)))
+        #end
+        #if(!$util.isNull($input.order))
+          $util.qr($expParts.add("#ord = :order"))
+          $util.qr($expValues.put(":order", $util.dynamodb.toDynamoDBJson($input.order)))
+        #end
+        {
+          "version": "2018-05-29",
+          "operation": "UpdateItem",
+          "key": {
+            "PK": { "S": "GLOBAL" },
+            "SK": $util.dynamodb.toDynamoDBJson("VIDEO#$videoId")
+          },
+          "update": {
+            "expression": "SET $util.join(', ', $expParts)"
+            #if(!$util.isNull($input.order))
+            ,
+            "expressionNames": {
+              "#ord": "order"
+            }
+            #end
+            ,
+            "expressionValues": $util.toJson($expValues)
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if($ctx.error)
+          $util.error($ctx.error.message, $ctx.error.type)
+        #end
+        #set($result = $ctx.result)
+        #set($result.videoId = $ctx.arguments.videoId)
+        $util.toJson($result)
+      `),
+    });
+
+    videosDs.createResolver("DeleteVideoResolver", {
+      typeName: "Mutation",
+      fieldName: "deleteVideo",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($videoId = $ctx.arguments.videoId)
+        {
+          "version": "2017-02-28",
+          "operation": "DeleteItem",
+          "key": {
+            "PK": { "S": "GLOBAL" },
+            "SK": { "S": "VIDEO#$videoId" }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString("true"),
     });
 
     // ==========================================

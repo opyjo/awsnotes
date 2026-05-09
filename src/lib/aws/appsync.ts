@@ -3,6 +3,11 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
+import type {
+  Video,
+  CreateVideoInput,
+  UpdateVideoInput,
+} from "@/types/video";
 
 // Define a simple client type to avoid TypeScript recursive depth issues
 type AmplifyClient = {
@@ -526,6 +531,225 @@ export const groupsApi = {
     })) as GraphQLResult<{ deleteGroup: boolean }>;
     const data = handleGraphQLResponse(response, "deleteGroup");
     return data.deleteGroup ?? false;
+  },
+};
+
+// ==========================================
+// Lesson videos (AppSync)
+// ==========================================
+
+const GET_VIDEOS = `
+  query GetVideos {
+    getVideos {
+      videoId
+      title
+      description
+      category
+      s3Key
+      thumbnailKey
+      duration
+      order
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_VIDEO = `
+  query GetVideo($videoId: ID!) {
+    getVideo(videoId: $videoId) {
+      videoId
+      title
+      description
+      category
+      s3Key
+      thumbnailKey
+      duration
+      order
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_VIDEOS_BY_CATEGORY = `
+  query GetVideosByCategory($category: String!) {
+    getVideosByCategory(category: $category) {
+      videoId
+      title
+      description
+      category
+      s3Key
+      thumbnailKey
+      duration
+      order
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const CREATE_VIDEO = `
+  mutation CreateVideo($input: CreateVideoInput!) {
+    createVideo(input: $input) {
+      videoId
+      title
+      description
+      category
+      s3Key
+      thumbnailKey
+      duration
+      order
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const UPDATE_VIDEO = `
+  mutation UpdateVideo($videoId: ID!, $input: UpdateVideoInput!) {
+    updateVideo(videoId: $videoId, input: $input) {
+      videoId
+      title
+      description
+      category
+      s3Key
+      thumbnailKey
+      duration
+      order
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const DELETE_VIDEO = `
+  mutation DeleteVideo($videoId: ID!) {
+    deleteVideo(videoId: $videoId)
+  }
+`;
+
+export const videosApi = {
+  getVideos: async (): Promise<Video[]> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_VIDEOS,
+    })) as GraphQLResult<{ getVideos: Video[] | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(response.errors[0]?.message || "Failed to fetch videos");
+    }
+
+    const items = response.data?.getVideos ?? [];
+    const sorted = [...items].sort((a, b) => {
+      const cat = (a.category ?? "").localeCompare(b.category ?? "", undefined, {
+        sensitivity: "base",
+      });
+      if (cat !== 0) return cat;
+      const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.title ?? "").localeCompare(b.title ?? "", undefined, {
+        sensitivity: "base",
+      });
+    });
+
+    return sorted;
+  },
+
+  getVideo: async (videoId: string): Promise<Video | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_VIDEO,
+      variables: { videoId },
+    })) as GraphQLResult<{ getVideo: Video | null }>;
+
+    const data = handleGraphQLResponse(response, "getVideo");
+    return data.getVideo ?? null;
+  },
+
+  getVideosByCategory: async (category: string): Promise<Video[]> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_VIDEOS_BY_CATEGORY,
+      variables: { category },
+    })) as GraphQLResult<{ getVideosByCategory: Video[] | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(
+        response.errors[0]?.message || "Failed to fetch videos by category",
+      );
+    }
+
+    const items = response.data?.getVideosByCategory ?? [];
+    return [...items].sort((a, b) => {
+      const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.title ?? "").localeCompare(b.title ?? "", undefined, {
+        sensitivity: "base",
+      });
+    });
+  },
+
+  createVideo: async (input: CreateVideoInput): Promise<Video> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: CREATE_VIDEO,
+      variables: { input },
+    })) as GraphQLResult<{ createVideo: Video }>;
+
+    const data = handleGraphQLResponse(response, "createVideo");
+    return data.createVideo;
+  },
+
+  updateVideo: async (
+    videoId: string,
+    input: UpdateVideoInput,
+  ): Promise<Video> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: UPDATE_VIDEO,
+      variables: { videoId, input },
+    })) as GraphQLResult<{ updateVideo: Video }>;
+
+    const data = handleGraphQLResponse(response, "updateVideo");
+    return data.updateVideo;
+  },
+
+  deleteVideo: async (videoId: string): Promise<boolean> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: DELETE_VIDEO,
+      variables: { videoId },
+    })) as GraphQLResult<{ deleteVideo: boolean }>;
+
+    const data = handleGraphQLResponse(response, "deleteVideo");
+    return data.deleteVideo ?? false;
   },
 };
 

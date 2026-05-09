@@ -94,6 +94,39 @@ input SaveUserSettingsInput {
   todos: [TodoItemInput]
 }
 
+type Video {
+  videoId: ID!
+  title: String!
+  description: String
+  category: String!
+  s3Key: String!
+  thumbnailKey: String
+  duration: Int
+  order: Int
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input CreateVideoInput {
+  title: String!
+  description: String
+  category: String!
+  s3Key: String!
+  thumbnailKey: String
+  duration: Int
+  order: Int
+}
+
+input UpdateVideoInput {
+  title: String
+  description: String
+  category: String
+  s3Key: String
+  thumbnailKey: String
+  duration: Int
+  order: Int
+}
+
 type NotesConnection {
   items: [Note]
   nextToken: String
@@ -107,6 +140,9 @@ type Query {
   getGroups: [Group]
   getGroup(groupId: ID!): Group
   getUserSettings: UserSettings
+  getVideos: [Video]
+  getVideo(videoId: ID!): Video
+  getVideosByCategory(category: String!): [Video]
 }
 
 type Mutation {
@@ -120,4 +156,7 @@ type Mutation {
   updateGroup(groupId: ID!, input: UpdateGroupInput!): Group
   deleteGroup(groupId: ID!): Boolean
   saveUserSettings(input: SaveUserSettingsInput!): UserSettings
+  createVideo(input: CreateVideoInput!): Video
+  updateVideo(videoId: ID!, input: UpdateVideoInput!): Video
+  deleteVideo(videoId: ID!): Boolean
 }
