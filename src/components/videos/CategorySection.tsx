@@ -1,12 +1,13 @@
 "use client";
 
-import type { Video } from "@/types/video";
+import type { Video, VideoProgress } from "@/types/video";
 import { VideoCard } from "@/components/videos/VideoCard";
 
 export interface CategorySectionProps {
   category: string;
   videos: Video[];
   onPlayVideo: (video: Video) => void;
+  progressByVideoId?: Record<string, VideoProgress>;
 }
 
 export const sectionIdFromCategory = (category: string): string => {
@@ -27,6 +28,7 @@ export const CategorySection = ({
   category,
   videos,
   onPlayVideo,
+  progressByVideoId,
 }: CategorySectionProps) => {
   const headingId = sectionIdFromCategory(category);
 
@@ -67,6 +69,7 @@ export const CategorySection = ({
             onPlay={onPlayVideo}
             showCategory={false}
             priority={index === 0}
+            progress={progressByVideoId?.[video.videoId] ?? null}
           />
         ))}
       </div>

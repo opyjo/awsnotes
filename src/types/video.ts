@@ -30,3 +30,21 @@ export interface UpdateVideoInput {
   duration?: number | null;
   order?: number | null;
 }
+
+export interface VideoProgress {
+  videoId: string;
+  progressSeconds: number;
+  duration?: number | null;
+  completed: boolean;
+  notes?: string | null;
+  lastWatchedAt: string;
+  updatedAt: string;
+}
+
+export interface SaveVideoProgressInput {
+  videoId: string;
+  progressSeconds: number;
+  duration?: number | null;
+  completed?: boolean | null;
+  notes?: string | null;
+}

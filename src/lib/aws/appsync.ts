@@ -7,6 +7,8 @@ import type {
   Video,
   CreateVideoInput,
   UpdateVideoInput,
+  VideoProgress,
+  SaveVideoProgressInput,
 } from "@/types/video";
 
 // Define a simple client type to avoid TypeScript recursive depth issues
@@ -750,6 +752,115 @@ export const videosApi = {
 
     const data = handleGraphQLResponse(response, "deleteVideo");
     return data.deleteVideo ?? false;
+  },
+};
+
+// ==========================================
+// Video Progress (per-user) Queries and Mutations
+// ==========================================
+
+const GET_VIDEO_PROGRESS = `
+  query GetVideoProgress($videoId: ID!) {
+    getVideoProgress(videoId: $videoId) {
+      videoId
+      progressSeconds
+      duration
+      completed
+      notes
+      lastWatchedAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_VIDEO_PROGRESS_LIST = `
+  query GetVideoProgressList {
+    getVideoProgressList {
+      videoId
+      progressSeconds
+      duration
+      completed
+      notes
+      lastWatchedAt
+      updatedAt
+    }
+  }
+`;
+
+const SAVE_VIDEO_PROGRESS = `
+  mutation SaveVideoProgress($input: SaveVideoProgressInput!) {
+    saveVideoProgress(input: $input) {
+      videoId
+      progressSeconds
+      duration
+      completed
+      notes
+      lastWatchedAt
+      updatedAt
+    }
+  }
+`;
+
+export const videoProgressApi = {
+  getVideoProgress: async (videoId: string): Promise<VideoProgress | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      return null;
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_VIDEO_PROGRESS,
+      variables: { videoId },
+    })) as GraphQLResult<{ getVideoProgress: VideoProgress | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(
+        response.errors[0]?.message || "Failed to fetch video progress",
+      );
+    }
+
+    return response.data?.getVideoProgress ?? null;
+  },
+
+  getVideoProgressList: async (): Promise<VideoProgress[]> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      return [];
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_VIDEO_PROGRESS_LIST,
+    })) as GraphQLResult<{ getVideoProgressList: VideoProgress[] | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(
+        response.errors[0]?.message || "Failed to fetch video progress list",
+      );
+    }
+
+    return response.data?.getVideoProgressList ?? [];
+  },
+
+  saveVideoProgress: async (
+    input: SaveVideoProgressInput,
+  ): Promise<VideoProgress> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: SAVE_VIDEO_PROGRESS,
+      variables: { input },
+    })) as GraphQLResult<{ saveVideoProgress: VideoProgress }>;
+
+    const data = handleGraphQLResponse(response, "saveVideoProgress");
+
+    if (!data.saveVideoProgress) {
+      throw new Error("Failed to save video progress");
+    }
+
+    return data.saveVideoProgress;
   },
 };
 

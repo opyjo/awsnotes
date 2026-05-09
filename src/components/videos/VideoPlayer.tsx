@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +20,56 @@ export interface VideoPlayerProps {
   url: string;
   title: string;
   className?: string;
+  onProgress?: (playedSeconds: number) => void;
+  onDuration?: (durationSeconds: number) => void;
+  onEnded?: () => void;
+  /** Throttle for native onTimeUpdate readouts in milliseconds. Default 1000. */
+  progressIntervalMs?: number;
 }
 
-export const VideoPlayer = ({ url, title, className }: VideoPlayerProps) => {
+export const VideoPlayer = ({
+  url,
+  title,
+  className,
+  onProgress,
+  onDuration,
+  onEnded,
+  progressIntervalMs = 1000,
+}: VideoPlayerProps) => {
+  const lastEmittedAtRef = useRef(0);
+
   if (!url) {
     return null;
   }
+
+  const handleTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (!onProgress) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastEmittedAtRef.current < progressIntervalMs) {
+      return;
+    }
+    lastEmittedAtRef.current = now;
+
+    const target = event.currentTarget;
+    if (Number.isFinite(target.currentTime)) {
+      onProgress(target.currentTime);
+    }
+  };
+
+  const handleDurationChange = (
+    event: React.SyntheticEvent<HTMLVideoElement>,
+  ) => {
+    if (!onDuration) {
+      return;
+    }
+    const target = event.currentTarget;
+    if (Number.isFinite(target.duration) && target.duration > 0) {
+      onDuration(target.duration);
+    }
+  };
 
   return (
     <div
@@ -41,6 +86,9 @@ export const VideoPlayer = ({ url, title, className }: VideoPlayerProps) => {
         width="100%"
         height="100%"
         playsInline
+        onTimeUpdate={handleTimeUpdate}
+        onDurationChange={handleDurationChange}
+        onEnded={onEnded}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { Video } from "@/types/video";
+import type { Video, VideoProgress } from "@/types/video";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCloudFrontAssetUrl } from "@/lib/cloudfront-url";
 import { formatDurationSeconds } from "@/lib/format-duration";
@@ -14,7 +14,33 @@ export interface VideoCardProps {
   /** When false, hides the category chip (e.g. inside a category section). Default true. */
   showCategory?: boolean;
   priority?: boolean;
+  progress?: VideoProgress | null;
 }
+
+const computeProgressPercent = (
+  progress: VideoProgress | null | undefined,
+  fallbackDuration: number | null | undefined,
+): number => {
+  if (!progress) {
+    return 0;
+  }
+
+  if (progress.completed) {
+    return 100;
+  }
+
+  const duration = progress.duration ?? fallbackDuration ?? 0;
+  if (!duration || duration <= 0) {
+    return 0;
+  }
+
+  const ratio = (progress.progressSeconds / duration) * 100;
+  if (!Number.isFinite(ratio)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(ratio)));
+};
 
 export const VideoCard = ({
   video,
@@ -22,9 +48,18 @@ export const VideoCard = ({
   className,
   showCategory = true,
   priority = false,
+  progress = null,
 }: VideoCardProps) => {
   const thumbUrl = getCloudFrontAssetUrl(video.thumbnailKey ?? undefined);
   const durationLabel = formatDurationSeconds(video.duration ?? undefined);
+  const progressPercent = computeProgressPercent(progress, video.duration);
+  const hasStartedProgress = Boolean(progress) && progressPercent > 0;
+  const isCompleted = Boolean(progress?.completed) || progressPercent >= 100;
+  const playLabel = isCompleted
+    ? "Replay"
+    : hasStartedProgress
+      ? "Resume"
+      : "Play";
 
   const handlePlayClick = () => {
     onPlay(video);
@@ -100,6 +135,36 @@ export const VideoCard = ({
                 {durationLabel}
               </span>
             ) : null}
+            {isCompleted ? (
+              <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/95 px-2 py-0.5 text-[0.65rem] font-semibold text-white shadow-sm backdrop-blur-sm">
+                <svg
+                  className="size-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Watched
+              </span>
+            ) : null}
+            {hasStartedProgress && !isCompleted ? (
+              <div
+                className="absolute inset-x-0 bottom-0 h-1 bg-white/20"
+                aria-hidden
+              >
+                <div
+                  className="h-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            ) : null}
           </div>
         </button>
         <div className="flex flex-1 flex-col gap-2 p-4 md:gap-2.5 md:p-5">
@@ -113,14 +178,19 @@ export const VideoCard = ({
               </p>
             ) : null}
           </div>
+          {hasStartedProgress && !isCompleted ? (
+            <p className="text-[0.7rem] font-medium text-muted-foreground">
+              {progressPercent}% watched
+            </p>
+          ) : null}
           <div className="mt-auto flex items-center justify-between gap-2 pt-2">
             <button
               type="button"
               className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-3.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={handlePlayClick}
-              aria-label={`Play ${video.title}`}
+              aria-label={`${playLabel} ${video.title}`}
             >
-              Play
+              {playLabel}
             </button>
             <Link
               href={`/videos/${video.videoId}`}

@@ -26,4 +26,12 @@ export const queryKeys = {
     byCategory: (category: string) =>
       [...queryKeys.videos.all, 'category', category] as const,
   },
+  videoProgress: {
+    all: ['videoProgress'] as const,
+    lists: () => [...queryKeys.videoProgress.all, 'list'] as const,
+    list: () => [...queryKeys.videoProgress.lists()] as const,
+    details: () => [...queryKeys.videoProgress.all, 'detail'] as const,
+    detail: (videoId: string) =>
+      [...queryKeys.videoProgress.details(), videoId] as const,
+  },
 } as const;

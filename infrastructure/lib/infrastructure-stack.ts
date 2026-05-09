@@ -899,6 +899,96 @@ $util.toJson($ctx.result)`,
     });
 
     // ==========================================
+    // Resolvers for Video Progress (per-user, stored in NotesTable with VIDEOPROGRESS# prefix)
+    // ==========================================
+
+    notesDs.createResolver("GetVideoProgressResolver", {
+      typeName: "Query",
+      fieldName: "getVideoProgress",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($videoId = $ctx.arguments.videoId)
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("VIDEOPROGRESS#$videoId")
+          },
+          "consistentRead": true
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result)`,
+      ),
+    });
+
+    notesDs.createResolver("GetVideoProgressListResolver", {
+      typeName: "Query",
+      fieldName: "getVideoProgressList",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "query": {
+            "expression": "PK = :userId AND begins_with(SK, :prefix)",
+            "expressionValues": {
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+              ":prefix": { "S": "VIDEOPROGRESS#" }
+            }
+          },
+          "consistentRead": true
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type)
+#end
+$util.toJson($ctx.result.items)`,
+      ),
+    });
+
+    notesDs.createResolver("SaveVideoProgressResolver", {
+      typeName: "Mutation",
+      fieldName: "saveVideoProgress",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($input = $ctx.arguments.input)
+        #set($videoId = $input.videoId)
+        #set($now = $util.time.nowISO8601())
+        #set($completed = $util.defaultIfNull($input.completed, false))
+        {
+          "version": "2017-02-28",
+          "operation": "PutItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("VIDEOPROGRESS#$videoId")
+          },
+          "attributeValues": {
+            "videoId": $util.dynamodb.toDynamoDBJson($videoId),
+            "progressSeconds": $util.dynamodb.toDynamoDBJson($input.progressSeconds),
+            "completed": $util.dynamodb.toDynamoDBJson($completed),
+            "lastWatchedAt": $util.dynamodb.toDynamoDBJson($now),
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if(!$util.isNull($input.duration))
+            ,"duration": $util.dynamodb.toDynamoDBJson($input.duration)
+            #end
+            #if(!$util.isNull($input.notes))
+            ,"notes": $util.dynamodb.toDynamoDBJson($input.notes)
+            #end
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#if($ctx.error)
+  $util.error($ctx.error.message, $ctx.error.type, $ctx.result)
+#end
+$util.toJson($ctx.result)`,
+      ),
+    });
+
+    // ==========================================
     // Outputs
     // ==========================================
     new cdk.CfnOutput(this, "UserPoolId", {

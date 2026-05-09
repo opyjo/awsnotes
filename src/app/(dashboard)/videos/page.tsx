@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
 import Link from "next/link";
 import { useVideos } from "@/hooks/api/useVideos";
+import { useVideoProgressList } from "@/hooks/api/useVideoProgress";
 import { groupVideosByCategory } from "@/lib/videos/group-by-category";
 import {
   CategorySection,
@@ -13,19 +15,116 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getCloudFrontAssetUrl } from "@/lib/cloudfront-url";
 import { formatDurationSeconds } from "@/lib/format-duration";
-import type { Video } from "@/types/video";
+import type { Video, VideoProgress } from "@/types/video";
+
+const computeProgressPercent = (
+  progress: VideoProgress,
+  fallbackDuration: number | null | undefined,
+): number => {
+  if (progress.completed) {
+    return 100;
+  }
+
+  const duration = progress.duration ?? fallbackDuration ?? 0;
+  if (!duration || duration <= 0) {
+    return 0;
+  }
+
+  const ratio = (progress.progressSeconds / duration) * 100;
+  if (!Number.isFinite(ratio)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(ratio)));
+};
 
 export default function VideosPage() {
   const { videos, isLoading, isError, error } = useVideos();
+  const { progressList } = useVideoProgressList();
   const [modalOpen, setModalOpen] = useState(false);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+
+  const filteredVideos = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return videos;
+    }
+
+    return videos.filter((video) => {
+      const searchableText = [
+        video.title,
+        video.description,
+        video.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(normalizedSearchQuery);
+    });
+  }, [normalizedSearchQuery, videos]);
 
   const grouped = useMemo(
-    () => groupVideosByCategory(videos),
-    [videos],
+    () => groupVideosByCategory(filteredVideos),
+    [filteredVideos],
   );
+
+  const progressByVideoId = useMemo(() => {
+    const map: Record<string, VideoProgress> = {};
+    for (const item of progressList) {
+      map[item.videoId] = item;
+    }
+    return map;
+  }, [progressList]);
+
+  const continueWatching = (() => {
+    if (videos.length === 0 || progressList.length === 0) {
+      return null;
+    }
+
+    const eligible = progressList
+      .filter((item) => !item.completed && item.progressSeconds > 0)
+      .sort((a, b) => {
+        const timeA = new Date(a.lastWatchedAt).getTime();
+        const timeB = new Date(b.lastWatchedAt).getTime();
+        const safeA = Number.isFinite(timeA) ? timeA : 0;
+        const safeB = Number.isFinite(timeB) ? timeB : 0;
+        return safeB - safeA;
+      });
+
+    const candidate = eligible.find((item) =>
+      videos.some((video) => video.videoId === item.videoId),
+    );
+
+    if (!candidate) {
+      return null;
+    }
+
+    const matchedVideo = videos.find(
+      (video) => video.videoId === candidate.videoId,
+    );
+
+    if (!matchedVideo) {
+      return null;
+    }
+
+    return { video: matchedVideo, progress: candidate };
+  })();
+
+  const continueWatchingThumbnailUrl = getCloudFrontAssetUrl(
+    continueWatching?.video.thumbnailKey ?? undefined,
+  );
+  const continueWatchingPercent = continueWatching
+    ? computeProgressPercent(
+        continueWatching.progress,
+        continueWatching.video.duration,
+      )
+    : 0;
 
   const categoryCount = grouped.length;
   const featuredVideo = videos[0] ?? null;
@@ -37,6 +136,14 @@ export default function VideosPage() {
   const handlePlayVideo = (video: Video) => {
     setActiveVideo(video);
     setModalOpen(true);
+  };
+
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
   };
 
   const handleModalOpenChange = (open: boolean) => {
@@ -236,6 +343,155 @@ export default function VideosPage() {
         </div>
       ) : null}
 
+      {!isLoading && !isError && continueWatching ? (
+        <section
+          className="mb-8 overflow-hidden rounded-4xl border border-primary/25 bg-linear-to-br from-primary/12 via-card/70 to-card/55 p-4 shadow-sm shadow-primary/10 ring-1 ring-primary/15 backdrop-blur-sm md:p-5"
+          aria-labelledby="continue-watching-heading"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <button
+              type="button"
+              className="group relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-950 text-left ring-1 ring-white/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:w-64 md:shrink-0"
+              onClick={() => handlePlayVideo(continueWatching.video)}
+              aria-label={`Resume ${continueWatching.video.title}`}
+            >
+              {continueWatchingThumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- CloudFront video thumbnails are user-managed assets.
+                <img
+                  src={continueWatchingThumbnailUrl}
+                  alt=""
+                  className="h-full w-full object-cover opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100"
+                />
+              ) : (
+                <div className="h-full w-full bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.5),transparent_40%),linear-gradient(135deg,#020617,#1d4ed8)]" />
+              )}
+              <span className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex size-12 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg shadow-black/30 transition group-hover:scale-110">
+                  <svg
+                    className="ml-0.5 size-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path d="M8 5v14l11-7L8 5z" />
+                  </svg>
+                </span>
+              </span>
+              <div
+                className="absolute inset-x-0 bottom-0 h-1.5 bg-white/15"
+                aria-hidden
+              >
+                <div
+                  className="h-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${continueWatchingPercent}%` }}
+                />
+              </div>
+            </button>
+            <div className="flex-1 space-y-3">
+              <div className="space-y-1.5">
+                <p
+                  id="continue-watching-heading"
+                  className="text-xs font-semibold uppercase tracking-[0.22em] text-primary"
+                >
+                  Continue watching
+                </p>
+                <h2 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                  {continueWatching.video.title}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {continueWatching.video.category} · {continueWatchingPercent}%
+                  watched
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  onClick={() => handlePlayVideo(continueWatching.video)}
+                  aria-label={`Resume ${continueWatching.video.title}`}
+                >
+                  Resume lesson
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="rounded-full text-foreground hover:bg-foreground/10"
+                >
+                  <Link
+                    href={`/videos/${continueWatching.video.videoId}`}
+                    aria-label={`Open lesson page for ${continueWatching.video.title}`}
+                  >
+                    Open lesson page
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!isLoading && !isError && videos.length > 0 ? (
+        <section
+          className="mb-8 rounded-4xl border border-border/60 bg-card/60 p-4 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-5"
+          aria-labelledby="video-search-heading"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <h2
+                id="video-search-heading"
+                className="text-lg font-semibold tracking-tight text-foreground"
+              >
+                Find a lesson
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Search by lesson title, description, or topic.
+              </p>
+            </div>
+            <p className="text-sm font-medium tabular-nums text-muted-foreground">
+              Showing {filteredVideos.length} of {videos.length}
+            </p>
+          </div>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                />
+              </svg>
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search videos..."
+                aria-label="Search videos"
+                className="h-11 rounded-2xl pl-10"
+              />
+            </div>
+            {searchQuery ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-2xl"
+                onClick={handleClearSearch}
+                aria-label="Clear video search"
+              >
+                Clear
+              </Button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       {!isLoading && isError ? (
         <Card className="border-destructive/30 bg-destructive/5 shadow-none">
           <CardContent className="pt-6">
@@ -268,6 +524,21 @@ export default function VideosPage() {
         />
       ) : null}
 
+      {!isLoading &&
+      !isError &&
+      videos.length > 0 &&
+      filteredVideos.length === 0 ? (
+        <EmptyState
+          title="No matching videos"
+          description="Try a different lesson title, description keyword, or topic name."
+          action={{
+            label: "Clear search",
+            onClick: handleClearSearch,
+          }}
+          className="rounded-4xl border border-dashed border-border bg-card/50"
+        />
+      ) : null}
+
       {!isLoading && !isError && grouped.length > 0 ? (
         <div className="space-y-8 md:space-y-10">
           {grouped.map(({ category, videos: sectionVideos }) => (
@@ -276,6 +547,7 @@ export default function VideosPage() {
               category={category}
               videos={sectionVideos}
               onPlayVideo={handlePlayVideo}
+              progressByVideoId={progressByVideoId}
             />
           ))}
         </div>
