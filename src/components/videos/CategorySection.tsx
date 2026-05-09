@@ -34,13 +34,13 @@ export const CategorySection = ({
 
   return (
     <section
-      className="h-full scroll-mt-24 rounded-4xl border border-border/60 bg-card/55 p-4 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-5"
+      className="flex h-full scroll-mt-24 flex-col rounded-3xl border border-border/60 bg-card/55 p-3 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-4"
       aria-labelledby={headingId}
     >
-      <div className="mb-4 flex flex-wrap items-center gap-3 md:mb-5">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15"
+            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15"
             aria-hidden
           >
             {category.slice(0, 1).toUpperCase()}
@@ -51,7 +51,7 @@ export const CategorySection = ({
             </p>
             <h2
               id={headingId}
-              className="mt-0.5 truncate text-lg font-semibold tracking-tight text-foreground md:text-xl"
+              className="mt-0.5 truncate text-base font-semibold tracking-tight text-foreground md:text-lg"
             >
               {category}
             </h2>

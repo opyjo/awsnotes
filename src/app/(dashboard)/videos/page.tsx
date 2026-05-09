@@ -17,7 +17,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getCloudFrontAssetUrl } from "@/lib/cloudfront-url";
+import { cn } from "@/lib/utils";
 import type { Video, VideoProgress } from "@/types/video";
+
+type VideoStatusFilter = "all" | "inProgress" | "completed";
 
 const computeProgressPercent = (
   progress: VideoProgress,
@@ -46,32 +49,10 @@ export default function VideosPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<VideoStatusFilter>("all");
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-
-  const filteredVideos = useMemo(() => {
-    if (!normalizedSearchQuery) {
-      return videos;
-    }
-
-    return videos.filter((video) => {
-      const searchableText = [
-        video.title,
-        video.description,
-        video.category,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(normalizedSearchQuery);
-    });
-  }, [normalizedSearchQuery, videos]);
-
-  const grouped = useMemo(
-    () => groupVideosByCategory(filteredVideos),
-    [filteredVideos],
-  );
 
   const progressByVideoId = useMemo(() => {
     const map: Record<string, VideoProgress> = {};
@@ -80,6 +61,65 @@ export default function VideosPage() {
     }
     return map;
   }, [progressList]);
+
+  const filteredVideos = useMemo(() => {
+    return videos.filter((video) => {
+      if (normalizedSearchQuery) {
+        const searchableText = [
+          video.title,
+          video.description,
+          video.category,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchableText.includes(normalizedSearchQuery)) {
+          return false;
+        }
+      }
+
+      const progress = progressByVideoId[video.videoId];
+      if (statusFilter === "completed") {
+        return Boolean(progress?.completed);
+      }
+
+      if (statusFilter === "inProgress") {
+        return progress
+          ? !progress.completed && progress.progressSeconds > 0
+          : false;
+      }
+
+      return true;
+    });
+  }, [normalizedSearchQuery, progressByVideoId, statusFilter, videos]);
+
+  const allGrouped = useMemo(() => groupVideosByCategory(videos), [videos]);
+
+  const grouped = useMemo(
+    () => groupVideosByCategory(filteredVideos),
+    [filteredVideos],
+  );
+
+  const completedCount = useMemo(
+    () =>
+      videos.filter((video) =>
+        Boolean(progressByVideoId[video.videoId]?.completed),
+      )
+        .length,
+    [progressByVideoId, videos],
+  );
+
+  const inProgressCount = useMemo(
+    () =>
+      videos.filter((video) => {
+        const progress = progressByVideoId[video.videoId];
+        return progress
+          ? !progress.completed && progress.progressSeconds > 0
+          : false;
+      }).length,
+    [progressByVideoId, videos],
+  );
 
   const continueWatching = (() => {
     if (videos.length === 0 || progressList.length === 0) {
@@ -125,7 +165,17 @@ export default function VideosPage() {
       )
     : 0;
 
-  const categoryCount = grouped.length;
+  const categoryCount = allGrouped.length;
+  const hasActiveFilters = Boolean(normalizedSearchQuery) || statusFilter !== "all";
+  const statusFilters: Array<{
+    id: VideoStatusFilter;
+    label: string;
+    count: number;
+  }> = [
+    { id: "all", label: "All", count: videos.length },
+    { id: "inProgress", label: "In progress", count: inProgressCount },
+    { id: "completed", label: "Completed", count: completedCount },
+  ];
 
   const handlePlayVideo = (video: Video) => {
     setActiveVideo(video);
@@ -136,8 +186,13 @@ export default function VideosPage() {
     setSearchQuery(event.target.value);
   };
 
-  const handleClearSearch = () => {
+  const handleStatusFilterChange = (filter: VideoStatusFilter) => {
+    setStatusFilter(filter);
+  };
+
+  const handleResetFilters = () => {
     setSearchQuery("");
+    setStatusFilter("all");
   };
 
   const handleModalOpenChange = (open: boolean) => {
@@ -199,7 +254,7 @@ export default function VideosPage() {
           </div>
 
           <div>
-            {!isLoading && !isError && grouped.length > 0 ? (
+            {!isLoading && !isError && allGrouped.length > 0 ? (
               <div className="rounded-3xl border border-border/60 bg-background/60 p-3">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -213,7 +268,7 @@ export default function VideosPage() {
                   className="flex max-h-24 flex-wrap gap-2 overflow-hidden"
                   aria-label="Video categories"
                 >
-                  {grouped.map(({ category }) => (
+                  {allGrouped.map(({ category }) => (
                     <Link
                       key={category}
                       href={`#${sectionIdFromCategory(category)}`}
@@ -351,61 +406,102 @@ export default function VideosPage() {
 
       {!isLoading && !isError && videos.length > 0 ? (
         <section
-          className="mb-8 rounded-4xl border border-border/60 bg-card/60 p-4 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-5"
+          className="sticky top-3 z-20 mb-6 rounded-4xl border border-border/60 bg-background/90 p-3 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-xl dark:ring-white/5 md:p-4"
           aria-labelledby="video-search-heading"
         >
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <h2
-                id="video-search-heading"
-                className="text-lg font-semibold tracking-tight text-foreground"
-              >
-                Find a lesson
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Search by lesson title, description, or topic.
-              </p>
-            </div>
-            <p className="text-sm font-medium tabular-nums text-muted-foreground">
-              Showing {filteredVideos.length} of {videos.length}
-            </p>
-          </div>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <svg
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center">
+              <div className="min-w-0">
+                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Library filters
+                </p>
+                <h2
+                  id="video-search-heading"
+                  className="mt-0.5 text-base font-semibold tracking-tight text-foreground"
+                >
+                  Find a lesson
+                </h2>
+              </div>
+              <div className="relative w-full md:w-80 lg:w-96">
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
+                  />
+                </svg>
+                <Input
+                  type="search"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  placeholder="Search videos..."
+                  aria-label="Search videos"
+                  className="h-10 rounded-2xl bg-card/80 pl-10"
                 />
-              </svg>
-              <Input
-                type="search"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                placeholder="Search videos..."
-                aria-label="Search videos"
-                className="h-11 rounded-2xl pl-10"
-              />
+              </div>
             </div>
-            {searchQuery ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-2xl"
-                onClick={handleClearSearch}
-                aria-label="Clear video search"
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:justify-end">
+              <div
+                className="flex flex-wrap gap-2"
+                role="group"
+                aria-label="Filter videos by progress"
               >
-                Clear
-              </Button>
-            ) : null}
+                {statusFilters.map((filter) => {
+                  const isActive = statusFilter === filter.id;
+
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={cn(
+                        "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        isActive
+                          ? "border-primary/30 bg-primary text-primary-foreground shadow-sm shadow-primary/15"
+                          : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/25 hover:bg-primary/10 hover:text-primary",
+                      )}
+                      onClick={() => handleStatusFilterChange(filter.id)}
+                      aria-pressed={isActive}
+                    >
+                      {filter.label}
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[0.65rem] tabular-nums",
+                          isActive
+                            ? "bg-primary-foreground/20 text-primary-foreground"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {filter.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <p className="whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
+                  Showing {filteredVideos.length} of {videos.length}
+                </p>
+                {hasActiveFilters ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={handleResetFilters}
+                    aria-label="Reset video filters"
+                  >
+                    Reset
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </div>
         </section>
       ) : null}
@@ -450,8 +546,8 @@ export default function VideosPage() {
           title="No matching videos"
           description="Try a different lesson title, description keyword, or topic name."
           action={{
-            label: "Clear search",
-            onClick: handleClearSearch,
+            label: "Reset filters",
+            onClick: handleResetFilters,
           }}
           className="rounded-4xl border border-dashed border-border bg-card/50"
         />

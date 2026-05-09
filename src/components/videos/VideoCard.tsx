@@ -186,7 +186,12 @@ export const VideoCard = ({
             ) : null}
           </div>
         </button>
-        <div className="flex flex-1 flex-col gap-2 p-4 md:gap-2.5 md:p-5">
+        <div
+          className={cn(
+            "flex flex-1 flex-col gap-2",
+            isVertical ? "p-3" : "p-4 md:gap-2.5 md:p-5",
+          )}
+        >
           <div className="space-y-1.5">
             <h3 className="text-sm font-semibold leading-snug tracking-tight text-foreground line-clamp-2 md:text-base">
               {video.title}
