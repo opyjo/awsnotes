@@ -7,6 +7,8 @@ import { getCloudFrontAssetUrl } from "@/lib/cloudfront-url";
 import { formatDurationSeconds } from "@/lib/format-duration";
 import { cn } from "@/lib/utils";
 
+export type VideoCardVariant = "auto" | "vertical";
+
 export interface VideoCardProps {
   video: Video;
   onPlay: (video: Video) => void;
@@ -15,6 +17,8 @@ export interface VideoCardProps {
   showCategory?: boolean;
   priority?: boolean;
   progress?: VideoProgress | null;
+  /** Card layout variant. "auto" switches to horizontal at sm breakpoint. "vertical" stays vertical. Default "auto". */
+  variant?: VideoCardVariant;
 }
 
 const computeProgressPercent = (
@@ -49,7 +53,9 @@ export const VideoCard = ({
   showCategory = true,
   priority = false,
   progress = null,
+  variant = "auto",
 }: VideoCardProps) => {
+  const isVertical = variant === "vertical";
   const thumbUrl = getCloudFrontAssetUrl(video.thumbnailKey ?? undefined);
   const durationLabel = formatDurationSeconds(video.duration ?? undefined);
   const progressPercent = computeProgressPercent(progress, video.duration);
@@ -72,14 +78,27 @@ export const VideoCard = ({
         className,
       )}
     >
-      <CardContent className="flex flex-col p-0 sm:flex-row">
+      <CardContent
+        className={cn(
+          "flex flex-col p-0",
+          !isVertical && "sm:flex-row",
+        )}
+      >
         <button
           type="button"
           aria-label={`Play lesson: ${video.title}`}
-          className="relative block w-full cursor-pointer text-left outline-none sm:w-48 sm:shrink-0 md:w-56"
+          className={cn(
+            "relative block w-full cursor-pointer text-left outline-none",
+            !isVertical && "sm:w-48 sm:shrink-0 md:w-56",
+          )}
           onClick={handlePlayClick}
         >
-          <div className="relative aspect-video w-full overflow-hidden bg-slate-950 sm:aspect-auto sm:h-full">
+          <div
+            className={cn(
+              "relative aspect-video w-full overflow-hidden bg-slate-950",
+              !isVertical && "sm:aspect-auto sm:h-full",
+            )}
+          >
             {thumbUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- CloudFront video thumbnails are user-managed assets.
               <img

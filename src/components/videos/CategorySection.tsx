@@ -34,10 +34,10 @@ export const CategorySection = ({
 
   return (
     <section
-      className="scroll-mt-24 rounded-4xl border border-border/60 bg-card/55 p-4 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-5"
+      className="h-full scroll-mt-24 rounded-4xl border border-border/60 bg-card/55 p-4 shadow-sm shadow-black/3 ring-1 ring-white/40 backdrop-blur-sm dark:ring-white/5 md:p-5"
       aria-labelledby={headingId}
     >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 md:mb-5">
+      <div className="mb-4 flex flex-wrap items-center gap-3 md:mb-5">
         <div className="flex min-w-0 items-center gap-3">
           <span
             className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15"
@@ -57,11 +57,8 @@ export const CategorySection = ({
             </h2>
           </div>
         </div>
-        <p className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground">
-          {videos.length} {videos.length === 1 ? "lesson" : "lessons"}
-        </p>
       </div>
-      <div className="grid gap-3 lg:grid-cols-2 lg:gap-4">
+      <div className="grid gap-3">
         {videos.map((video, index) => (
           <VideoCard
             key={video.videoId}
@@ -70,6 +67,7 @@ export const CategorySection = ({
             showCategory={false}
             priority={index === 0}
             progress={progressByVideoId?.[video.videoId] ?? null}
+            variant="vertical"
           />
         ))}
       </div>
