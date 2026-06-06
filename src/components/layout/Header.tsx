@@ -13,6 +13,7 @@ const navItems = [
   { href: "/videos", label: "Videos" },
   { href: "/chat", label: "AI Tutor" },
   { href: "/exam-coach", label: "Exam Coach" },
+  { href: "/key-concepts", label: "Key Concepts" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 

@@ -8,6 +8,8 @@ import {
   type ModelId,
 } from "@/types/chat";
 import { markdownToHtml } from "@/lib/markdown-to-html";
+import { parseExamCoachResponse, toKeyConceptInput } from "@/lib/parse-exam-coach-response";
+import { useKeyConcepts } from "@/hooks/api/useKeyConcepts";
 
 export default function ExamCoachPage() {
   const [question, setQuestion] = useState("");
@@ -15,7 +17,10 @@ export default function ExamCoachPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelId>(DEFAULT_CHAT_MODEL);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { createConcept, isCreating } = useKeyConcepts();
 
   const handleSubmit = useCallback(async () => {
     if (!question.trim() || isLoading) return;
@@ -23,6 +28,8 @@ export default function ExamCoachPage() {
     setIsLoading(true);
     setError(null);
     setResponse("");
+    setIsSaved(false);
+    setSaveError(null);
 
     abortControllerRef.current = new AbortController();
 
@@ -100,7 +107,28 @@ export default function ExamCoachPage() {
     setResponse("");
     setError(null);
     setIsLoading(false);
+    setIsSaved(false);
+    setSaveError(null);
   };
+
+  const handleSaveConcept = useCallback(async () => {
+    if (!response || isSaved || isCreating) return;
+    setSaveError(null);
+
+    const parsed = parseExamCoachResponse(response);
+    if (!parsed) {
+      setSaveError("Could not parse the response. Try a different question format.");
+      return;
+    }
+
+    try {
+      const input = toKeyConceptInput(parsed, question.trim() || undefined);
+      await createConcept(input);
+      setIsSaved(true);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save concept");
+    }
+  }, [response, question, isSaved, isCreating, createConcept]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -176,10 +204,38 @@ export default function ExamCoachPage() {
       {(response || isLoading) && (
         <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-sm p-6">
           {response ? (
-            <div
-              className="text-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:font-semibold [&_p]:my-2 [&_p]:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: markdownToHtml(response) }}
-            />
+            <>
+              <div
+                className="text-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:font-semibold [&_p]:my-2 [&_p]:leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(response) }}
+              />
+              {!isLoading && (
+                <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-3">
+                  <button
+                    onClick={handleSaveConcept}
+                    disabled={isSaved || isCreating}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isSaved
+                        ? "bg-green-500/10 text-green-600 border border-green-500/30 cursor-default"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    {isCreating ? "Saving..." : isSaved ? "Saved!" : "Save Key Concept"}
+                  </button>
+                  {isSaved && (
+                    <a
+                      href="/key-concepts"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      View saved concepts
+                    </a>
+                  )}
+                  {saveError && (
+                    <span className="text-sm text-destructive">{saveError}</span>
+                  )}
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

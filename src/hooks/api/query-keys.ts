@@ -28,4 +28,11 @@ export const queryKeys = {
     detail: (videoId: string) =>
       [...queryKeys.videoProgress.details(), videoId] as const,
   },
+  keyConcepts: {
+    all: ['keyConcepts'] as const,
+    lists: () => [...queryKeys.keyConcepts.all, 'list'] as const,
+    list: () => [...queryKeys.keyConcepts.lists()] as const,
+    details: () => [...queryKeys.keyConcepts.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.keyConcepts.details(), id] as const,
+  },
 } as const;

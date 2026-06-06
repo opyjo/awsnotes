@@ -119,6 +119,25 @@ input SaveVideoProgressInput {
   notes: String
 }
 
+type KeyConcept {
+  conceptId: ID!
+  topic: String!
+  whatItsTesting: String!
+  distractorPattern: String!
+  theRule: String!
+  sourceQuestion: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input CreateKeyConceptInput {
+  topic: String!
+  whatItsTesting: String!
+  distractorPattern: String!
+  theRule: String!
+  sourceQuestion: String
+}
+
 type NotesConnection {
   items: [Note]
   nextToken: String
@@ -135,6 +154,8 @@ type Query {
   getVideosByCategory(category: String!): [Video]
   getVideoProgress(videoId: ID!): VideoProgress
   getVideoProgressList: [VideoProgress]
+  getKeyConcepts: [KeyConcept]
+  getKeyConcept(conceptId: ID!): KeyConcept
 }
 
 type Mutation {
@@ -149,4 +170,6 @@ type Mutation {
   updateVideo(videoId: ID!, input: UpdateVideoInput!): Video
   deleteVideo(videoId: ID!): Boolean
   saveVideoProgress(input: SaveVideoProgressInput!): VideoProgress
+  createKeyConcept(input: CreateKeyConceptInput!): KeyConcept
+  deleteKeyConcept(conceptId: ID!): Boolean
 }

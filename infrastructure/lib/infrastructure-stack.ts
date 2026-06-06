@@ -777,6 +777,104 @@ $util.toJson($ctx.result)`,
     });
 
     // ==========================================
+    // Resolvers for Key Concepts (stored in NotesTable with KEYCONCEPT# prefix)
+    // ==========================================
+
+    // getKeyConcepts
+    notesDs.createResolver("GetKeyConceptsResolver", {
+      typeName: "Query",
+      fieldName: "getKeyConcepts",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "query": {
+            "expression": "PK = :userId AND begins_with(SK, :prefix)",
+            "expressionValues": {
+              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+              ":prefix": { "S": "KEYCONCEPT#" }
+            }
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result.items)",
+      ),
+    });
+
+    // getKeyConcept
+    notesDs.createResolver("GetKeyConceptResolver", {
+      typeName: "Query",
+      fieldName: "getKeyConcept",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($conceptId = $ctx.arguments.conceptId)
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("KEYCONCEPT#$conceptId")
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result)",
+      ),
+    });
+
+    // createKeyConcept
+    notesDs.createResolver("CreateKeyConceptResolver", {
+      typeName: "Mutation",
+      fieldName: "createKeyConcept",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($conceptId = $util.autoId())
+        #set($now = $util.time.nowISO8601())
+        #set($input = $ctx.arguments.input)
+        {
+          "version": "2017-02-28",
+          "operation": "PutItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("KEYCONCEPT#$conceptId")
+          },
+          "attributeValues": {
+            "conceptId": $util.dynamodb.toDynamoDBJson($conceptId),
+            "topic": $util.dynamodb.toDynamoDBJson($input.topic),
+            "whatItsTesting": $util.dynamodb.toDynamoDBJson($input.whatItsTesting),
+            "distractorPattern": $util.dynamodb.toDynamoDBJson($input.distractorPattern),
+            "theRule": $util.dynamodb.toDynamoDBJson($input.theRule),
+            "createdAt": $util.dynamodb.toDynamoDBJson($now),
+            "updatedAt": $util.dynamodb.toDynamoDBJson($now)
+            #if($input.sourceQuestion)
+            ,"sourceQuestion": $util.dynamodb.toDynamoDBJson($input.sourceQuestion)
+            #end
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        "$util.toJson($ctx.result)",
+      ),
+    });
+
+    // deleteKeyConcept
+    notesDs.createResolver("DeleteKeyConceptResolver", {
+      typeName: "Mutation",
+      fieldName: "deleteKeyConcept",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        #set($conceptId = $ctx.arguments.conceptId)
+        {
+          "version": "2017-02-28",
+          "operation": "DeleteItem",
+          "key": {
+            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+            "SK": $util.dynamodb.toDynamoDBJson("KEYCONCEPT#$conceptId")
+          }
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString("true"),
+    });
+
+    // ==========================================
     // Outputs
     // ==========================================
     new cdk.CfnOutput(this, "UserPoolId", {

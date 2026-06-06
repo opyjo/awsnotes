@@ -2,6 +2,7 @@ import { generateClient, GraphQLResult } from "aws-amplify/api";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
+import type { KeyConcept, CreateKeyConceptInput } from "@/types/key-concept";
 import type {
   Video,
   CreateVideoInput,
@@ -806,5 +807,127 @@ export const userSettingsApi = {
     }
 
     return response.data?.saveUserSettings || null;
+  },
+};
+
+// ==========================================
+// Key Concepts Queries and Mutations
+// ==========================================
+
+const GET_KEY_CONCEPTS = `
+  query GetKeyConcepts {
+    getKeyConcepts {
+      conceptId
+      topic
+      whatItsTesting
+      distractorPattern
+      theRule
+      sourceQuestion
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_KEY_CONCEPT = `
+  query GetKeyConcept($conceptId: ID!) {
+    getKeyConcept(conceptId: $conceptId) {
+      conceptId
+      topic
+      whatItsTesting
+      distractorPattern
+      theRule
+      sourceQuestion
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const CREATE_KEY_CONCEPT = `
+  mutation CreateKeyConcept($input: CreateKeyConceptInput!) {
+    createKeyConcept(input: $input) {
+      conceptId
+      topic
+      whatItsTesting
+      distractorPattern
+      theRule
+      sourceQuestion
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const DELETE_KEY_CONCEPT = `
+  mutation DeleteKeyConcept($conceptId: ID!) {
+    deleteKeyConcept(conceptId: $conceptId)
+  }
+`;
+
+export const keyConceptsApi = {
+  getKeyConcepts: async (): Promise<KeyConcept[]> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_KEY_CONCEPTS,
+    })) as GraphQLResult<{ getKeyConcepts: KeyConcept[] | null }>;
+
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(response.errors[0]?.message || "Failed to fetch key concepts");
+    }
+
+    const items = response.data?.getKeyConcepts ?? [];
+    return [...items].sort((a, b) =>
+      (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+    );
+  },
+
+  getKeyConcept: async (conceptId: string): Promise<KeyConcept | null> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: GET_KEY_CONCEPT,
+      variables: { conceptId },
+    })) as GraphQLResult<{ getKeyConcept: KeyConcept | null }>;
+
+    const data = handleGraphQLResponse(response, "getKeyConcept");
+    return data.getKeyConcept ?? null;
+  },
+
+  createKeyConcept: async (input: CreateKeyConceptInput): Promise<KeyConcept> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: CREATE_KEY_CONCEPT,
+      variables: { input },
+    })) as GraphQLResult<{ createKeyConcept: KeyConcept }>;
+
+    const data = handleGraphQLResponse(response, "createKeyConcept");
+    return data.createKeyConcept;
+  },
+
+  deleteKeyConcept: async (conceptId: string): Promise<boolean> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: DELETE_KEY_CONCEPT,
+      variables: { conceptId },
+    })) as GraphQLResult<{ deleteKeyConcept: boolean }>;
+
+    const data = handleGraphQLResponse(response, "deleteKeyConcept");
+    return data.deleteKeyConcept ?? false;
   },
 };
