@@ -2,7 +2,6 @@ import * as cdk from "aws-cdk-lib";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from "aws-cdk-lib/aws-s3";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as appsync from "aws-cdk-lib/aws-appsync";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
@@ -75,21 +74,6 @@ export class AwsStudyNotesStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN for production
     });
 
-    const flashcardsTable = new dynamodb.Table(this, "FlashcardsTable", {
-      tableName: "aws-study-notes-flashcards",
-      partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // Change to RETAIN for production
-    });
-
-    // Add GSI for due flashcards
-    flashcardsTable.addGlobalSecondaryIndex({
-      indexName: "nextReviewDate-index",
-      partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "nextReviewDate", type: dynamodb.AttributeType.STRING },
-    });
-
     const videosTable = new dynamodb.Table(this, "VideosTable", {
       tableName: "aws-study-notes-videos",
       partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
@@ -141,29 +125,7 @@ export class AwsStudyNotesStack extends cdk.Stack {
     });
 
     // ==========================================
-    // 5. Lambda Function for SM-2 Review
-    // ==========================================
-    const reviewFlashcardLambda = new lambda.Function(
-      this,
-      "ReviewFlashcardLambda",
-      {
-        functionName: "review-flashcard",
-        runtime: lambda.Runtime.NODEJS_18_X,
-        handler: "index.handler",
-        code: lambda.Code.fromAsset(
-          path.join(__dirname, "../../lambda/review-flashcard"),
-        ),
-        timeout: cdk.Duration.seconds(10),
-        environment: {
-          TABLE_NAME: flashcardsTable.tableName,
-        },
-      },
-    );
-
-    flashcardsTable.grantReadWriteData(reviewFlashcardLambda);
-
-    // ==========================================
-    // 6. AppSync GraphQL API
+    // 5. AppSync GraphQL API
     // ==========================================
     const api = new appsync.GraphqlApi(this, "Api", {
       name: "aws-study-notes-api",
@@ -186,14 +148,6 @@ export class AwsStudyNotesStack extends cdk.Stack {
 
     // Data Sources
     const notesDs = api.addDynamoDbDataSource("NotesDataSource", notesTable);
-    const flashcardsDs = api.addDynamoDbDataSource(
-      "FlashcardsDataSource",
-      flashcardsTable,
-    );
-    const lambdaDs = api.addLambdaDataSource(
-      "ReviewLambdaDataSource",
-      reviewFlashcardLambda,
-    );
     const videosDs = api.addDynamoDbDataSource("VideosDataSource", videosTable);
 
     // ==========================================
@@ -526,172 +480,6 @@ null
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString("true"),
-    });
-
-    // ==========================================
-    // Resolvers for Flashcards
-    // ==========================================
-
-    // getFlashcards
-    flashcardsDs.createResolver("GetFlashcardsResolver", {
-      typeName: "Query",
-      fieldName: "getFlashcards",
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        #set($deckId = $ctx.arguments.deckId)
-        {
-          "version": "2017-02-28",
-          "operation": "Query",
-          "query": {
-            "expression": "PK = :userId AND begins_with(SK, :cardPrefix)",
-            "expressionValues": {
-              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
-              ":cardPrefix": { "S": "CARD#" }
-            }
-          },
-          "filter": {
-            "expression": "deckId = :deckId",
-            "expressionValues": {
-              ":deckId": $util.dynamodb.toDynamoDBJson($deckId)
-            }
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result.items)",
-      ),
-    });
-
-    // getDueFlashcards
-    flashcardsDs.createResolver("GetDueFlashcardsResolver", {
-      typeName: "Query",
-      fieldName: "getDueFlashcards",
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        #set($now = $util.time.nowISO8601())
-        {
-          "version": "2017-02-28",
-          "operation": "Query",
-          "index": "nextReviewDate-index",
-          "query": {
-            "expression": "PK = :userId AND nextReviewDate <= :now",
-            "expressionValues": {
-              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
-              ":now": $util.dynamodb.toDynamoDBJson($now)
-            }
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result.items)",
-      ),
-    });
-
-    // createFlashcard
-    flashcardsDs.createResolver("CreateFlashcardResolver", {
-      typeName: "Mutation",
-      fieldName: "createFlashcard",
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        #set($cardId = $util.autoId())
-        #set($now = $util.time.nowISO8601())
-        #set($input = $ctx.arguments.input)
-        {
-          "version": "2017-02-28",
-          "operation": "PutItem",
-          "key": {
-            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
-            "SK": $util.dynamodb.toDynamoDBJson("CARD#$cardId")
-          },
-          "attributeValues": {
-            "cardId": $util.dynamodb.toDynamoDBJson($cardId),
-            "deckId": $util.dynamodb.toDynamoDBJson($input.deckId),
-            "front": $util.dynamodb.toDynamoDBJson($input.front),
-            "back": $util.dynamodb.toDynamoDBJson($input.back),
-            "easeFactor": { "N": "2.5" },
-            "interval": { "N": "0" },
-            "repetitions": { "N": "0" },
-            "nextReviewDate": $util.dynamodb.toDynamoDBJson($now),
-            "createdAt": $util.dynamodb.toDynamoDBJson($now)
-            #if($input.noteId)
-            ,"noteId": $util.dynamodb.toDynamoDBJson($input.noteId)
-            #end
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result)",
-      ),
-    });
-
-    // updateFlashcard
-    flashcardsDs.createResolver("UpdateFlashcardResolver", {
-      typeName: "Mutation",
-      fieldName: "updateFlashcard",
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        #set($cardId = $ctx.arguments.cardId)
-        #set($input = $ctx.arguments.input)
-        #set($expParts = [])
-        #set($expValues = {})
-        #if($input.deckId)
-          $util.qr($expParts.add("deckId = :deckId"))
-          $util.qr($expValues.put(":deckId", $util.dynamodb.toDynamoDB($input.deckId)))
-        #end
-        #if($input.front)
-          $util.qr($expParts.add("front = :front"))
-          $util.qr($expValues.put(":front", $util.dynamodb.toDynamoDB($input.front)))
-        #end
-        #if($input.back)
-          $util.qr($expParts.add("back = :back"))
-          $util.qr($expValues.put(":back", $util.dynamodb.toDynamoDB($input.back)))
-        #end
-        {
-          "version": "2018-05-29",
-          "operation": "UpdateItem",
-          "key": {
-            "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
-            "SK": $util.dynamodb.toDynamoDBJson("CARD#$cardId")
-          },
-          "update": {
-            "expression": "SET $util.toJson($util.join(', ', $expParts))",
-            "expressionValues": $util.toJson($expValues)
-          },
-          "condition": {
-            "expression": "PK = :userId",
-            "expressionValues": {
-              ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
-            }
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(`
-        #if($ctx.error)
-          $util.error($ctx.error.message, $ctx.error.type)
-        #end
-        #set($result = $ctx.result)
-        #set($result.cardId = $ctx.arguments.cardId)
-        $util.toJson($result)
-      `),
-    });
-
-    // reviewFlashcard (Lambda)
-    lambdaDs.createResolver("ReviewFlashcardResolver", {
-      typeName: "Mutation",
-      fieldName: "reviewFlashcard",
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        {
-          "version": "2017-02-28",
-          "operation": "Invoke",
-          "payload": {
-            "cardId": "$ctx.arguments.cardId",
-            "quality": $ctx.arguments.quality,
-            "userId": "$ctx.identity.sub"
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(`
-        #if($ctx.error)
-          $util.error($ctx.error.message, $ctx.error.type)
-        #end
-        $util.toJson($ctx.result)
-      `),
     });
 
     // ==========================================

@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AWS Study Notes",
-  description: "Study notes and flashcards for AWS certification preparation",
+  description: "Study notes for AWS certification preparation",
 };
 
 export default function RootLayout({

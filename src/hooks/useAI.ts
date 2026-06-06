@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { getAuthToken } from "@/lib/aws/cognito";
-import type { Flashcard } from "@/lib/openai";
 
 interface UseAIResult {
-  generateFlashcards: (noteContent: string, count?: number) => Promise<Flashcard[]>;
   explainConcept: (concept: string, context?: string) => Promise<string>;
   summarizeNote: (noteContent: string) => Promise<string>;
   loading: boolean;
@@ -15,41 +13,6 @@ interface UseAIResult {
 export const useAI = (): UseAIResult => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const generateFlashcards = async (
-    noteContent: string,
-    count: number = 5
-  ): Promise<Flashcard[]> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const token = await getAuthToken();
-      const response = await fetch("/api/ai/generate-flashcards", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ noteContent, count }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate flashcards");
-      }
-
-      const data = await response.json();
-      return data.flashcards || [];
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to generate flashcards";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const explainConcept = async (
     concept: string,
@@ -119,7 +82,6 @@ export const useAI = (): UseAIResult => {
   };
 
   return {
-    generateFlashcards,
     explainConcept,
     summarizeNote,
     loading,

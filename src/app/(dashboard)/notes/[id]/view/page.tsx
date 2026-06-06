@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useNote } from "@/hooks/api/useNote";
 import { useNotes } from "@/hooks/api/useNotes";
 import { useGroups } from "@/hooks/api/useGroups";
-import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { AIExplainPanel } from "@/components/notes/AIExplainPanel";
 import { NoteChatPanel } from "@/components/notes/NoteChatPanel";
 import { NotesBreadcrumbs, type NotesBreadcrumbItem } from "@/components/notes/layout/NotesBreadcrumbs";
@@ -41,7 +40,6 @@ const ViewNoteContent = () => {
   const { deleteNote } = useNotes();
   const { groups, isLoading: groupsLoading, getGroupByName } = useGroups();
 
-  const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
   const [explainPanelOpen, setExplainPanelOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [toolsPanelOpen, setToolsPanelOpen] = useState(false);
@@ -50,7 +48,6 @@ const ViewNoteContent = () => {
     x: number;
     y: number;
   } | null>(null);
-  const [flashcardSeed, setFlashcardSeed] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   const rawGroupId = parseNotesGroupId(searchParams);
@@ -301,7 +298,7 @@ const ViewNoteContent = () => {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Select any text in the note to explain it or generate flashcards.
+                Select any text in the note to explain it.
               </p>
             </div>
           </NotesContentSurface>
@@ -332,27 +329,6 @@ const ViewNoteContent = () => {
           </div>
 
           <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFlashcardSeed(null);
-                setFlashcardGeneratorOpen(true);
-                setToolsPanelOpen(false);
-              }}
-              className="w-full justify-start"
-            >
-              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-              Generate Flashcards
-            </Button>
-
             <Button
               variant="outline"
               size="sm"
@@ -426,20 +402,6 @@ const ViewNoteContent = () => {
           >
             Explain
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              if (selectedText) {
-                setFlashcardSeed(selectedText);
-                setFlashcardGeneratorOpen(true);
-              }
-            }}
-            className="h-7 px-2 text-xs"
-          >
-            Flashcards
-          </Button>
         </div>
       )}
 
@@ -451,17 +413,6 @@ const ViewNoteContent = () => {
         onInsertExplanation={(explanation) => {
           console.log("Explanation generated:", explanation);
         }}
-      />
-
-      <AIFlashcardGenerator
-        open={flashcardGeneratorOpen}
-        onOpenChange={(open) => {
-          setFlashcardGeneratorOpen(open);
-          if (!open) setFlashcardSeed(null);
-        }}
-        noteId={noteId}
-        noteContent={flashcardSeed || note.content}
-        deckId="default"
       />
 
       <NoteChatPanel

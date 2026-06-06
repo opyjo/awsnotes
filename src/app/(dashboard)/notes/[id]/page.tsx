@@ -6,7 +6,6 @@ import { useNote } from "@/hooks/api/useNote";
 import { useNotes } from "@/hooks/api/useNotes";
 import { useGroups } from "@/hooks/api/useGroups";
 import { NoteEditor } from "@/components/notes/NoteEditor";
-import { AIFlashcardGenerator } from "@/components/flashcards/AIFlashcardGenerator";
 import { NoteChatPanel } from "@/components/notes/NoteChatPanel";
 import { NotesBreadcrumbs, type NotesBreadcrumbItem } from "@/components/notes/layout/NotesBreadcrumbs";
 import { GroupSelect } from "@/components/groups";
@@ -72,7 +71,6 @@ const EditNoteFormContent = ({
   const [category, setCategory] = useState(initialNote.category || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [flashcardGeneratorOpen, setFlashcardGeneratorOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [toolsPanelOpen, setToolsPanelOpen] = useState(false);
 
@@ -257,27 +255,6 @@ const EditNoteFormContent = ({
               variant="outline"
               size="sm"
               onClick={() => {
-                setFlashcardGeneratorOpen(true);
-                setToolsPanelOpen(false);
-              }}
-              className="w-full justify-start"
-            >
-              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-              Generate Flashcards
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
                 setChatOpen(true);
                 setToolsPanelOpen(false);
               }}
@@ -314,14 +291,6 @@ const EditNoteFormContent = ({
           </div>
         </NotesToolsPanel>
       </NotesSplitLayout>
-
-      <AIFlashcardGenerator
-        open={flashcardGeneratorOpen}
-        onOpenChange={setFlashcardGeneratorOpen}
-        noteId={noteId}
-        noteContent={content}
-        deckId="default"
-      />
 
       <NoteChatPanel
         isOpen={chatOpen}

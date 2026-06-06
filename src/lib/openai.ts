@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -12,97 +11,6 @@ const openai = apiKey
       apiKey,
     })
   : null;
-
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-
-if (!anthropicApiKey) {
-  console.warn("ANTHROPIC_API_KEY is not set. Claude AI features will not work.");
-}
-
-const anthropic = anthropicApiKey
-  ? new Anthropic({
-      apiKey: anthropicApiKey,
-    })
-  : null;
-
-export interface Flashcard {
-  front: string;
-  back: string;
-}
-
-export const generateFlashcards = async (
-  noteContent: string,
-  count: number = 5
-): Promise<Flashcard[]> => {
-  if (!anthropic) {
-    throw new Error("Anthropic API key is not configured");
-  }
-
-  const flashcardCount = Math.max(1, Math.min(20, count));
-
-  const prompt = `Given this AWS study note content, generate exactly ${flashcardCount} flashcards that mirror real AWS SAA-C03 exam questions.
-
-QUESTION FORMAT RULES:
-- Every question MUST be scenario-based (e.g., "A company needs to migrate a 50TB database with minimal downtime. Which AWS service and migration strategy should they use?")
-- NEVER generate simple definition questions like "What is S3?" or "What does IAM stand for?"
-- Questions should present a business scenario with specific constraints (cost, performance, availability, security, compliance) and ask which AWS service or architecture best fits
-
-ANSWER FORMAT RULES:
-- State the correct service/architecture choice first
-- Explain WHY it's correct in 1-2 sentences
-- Mention 1 common wrong answer and why it's wrong (exam trap)
-
-COVER THESE SAA-C03 AREAS (when relevant to the note content):
-- Service selection under constraints (cost optimization, performance, availability, security)
-- Architecture trade-offs and comparisons (e.g., ALB vs NLB, RDS vs DynamoDB, EFS vs EBS)
-- Well-Architected Framework pillars applied to real scenarios
-- Common exam traps and misconceptions (e.g., S3 eventual consistency exceptions, encryption defaults)
-- Edge cases: service limits, regional availability, default behaviors
-
-Return ONLY a valid JSON array with this exact format:
-[
-  { "front": "scenario-based question", "back": "correct answer with reasoning and common trap" },
-  { "front": "scenario-based question", "back": "correct answer with reasoning and common trap" }
-]
-
-Note content:
-${noteContent.substring(0, 3000)}`;
-
-  try {
-    const maxTokens = Math.max(1000, flashcardCount * 300);
-
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: maxTokens,
-      system: "You are an expert AWS Solutions Architect Associate (SAA-C03) exam coach. Generate flashcards that mirror the real exam format: scenario-based questions that test architectural decision-making, service selection under specific constraints, and understanding of AWS best practices. Never generate simple definition-style questions. Always return valid JSON only.",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-    });
-
-    const content = message.content[0];
-    if (content.type !== "text" || !content.text) {
-      throw new Error("No response from Claude");
-    }
-
-    const jsonMatch = content.text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error("Invalid response format from Claude");
-    }
-
-    const flashcards = JSON.parse(jsonMatch[0]) as Flashcard[];
-    return flashcards;
-  } catch (error) {
-    console.error("Error generating flashcards:", error);
-    throw new Error(
-      `Failed to generate flashcards: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
-};
 
 export const explainConcept = async (
   concept: string,

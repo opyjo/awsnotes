@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useNotes } from "@/hooks/api/useNotes";
-import { useFlashcards } from "@/hooks/api/useFlashcards";
 import {
   Card,
   CardContent,
@@ -17,11 +16,8 @@ import { format } from "date-fns";
 
 export default function DashboardPage() {
   const { notes, isLoading: notesLoading, isError: notesError, error: notesErrorMsg } = useNotes();
-  const { dueFlashcards, isLoading: cardsLoading } = useFlashcards();
 
-  const loading = notesLoading || cardsLoading;
-
-  if (loading) {
+  if (notesLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -58,7 +54,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Notes</CardDescription>
@@ -78,27 +74,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className={dueFlashcards.length > 0 ? "border-primary" : ""}>
-          <CardHeader className="pb-2">
-            <CardDescription>Due for Review</CardDescription>
-            <CardTitle className="text-3xl md:text-4xl">
-              {dueFlashcards.length}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dueFlashcards.length > 0 ? (
-              <Button asChild size="sm">
-                <Link href="/flashcards/review">Start Review</Link>
-              </Button>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                All caught up!
-              </span>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2 md:col-span-1">
+        <Card>
           <CardHeader className="pb-2">
             <CardDescription>Categories</CardDescription>
             <CardTitle className="text-3xl md:text-4xl">

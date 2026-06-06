@@ -9,19 +9,6 @@ type Note {
   updatedAt: AWSDateTime!
 }
 
-type Flashcard {
-  cardId: ID!
-  deckId: ID!
-  front: String!
-  back: String!
-  noteId: ID
-  easeFactor: Float!
-  interval: Int!
-  repetitions: Int!
-  nextReviewDate: AWSDateTime!
-  createdAt: AWSDateTime!
-}
-
 type Group {
   groupId: ID!
   name: String!
@@ -44,19 +31,6 @@ input UpdateNoteInput {
   category: String
 
   images: [String]
-}
-
-input CreateFlashcardInput {
-  deckId: ID!
-  front: String!
-  back: String!
-  noteId: ID
-}
-
-input UpdateFlashcardInput {
-  deckId: ID
-  front: String
-  back: String
 }
 
 input CreateGroupInput {
@@ -153,8 +127,6 @@ type NotesConnection {
 type Query {
   getNotes(limit: Int, nextToken: String): NotesConnection
   getNote(noteId: ID!): Note
-  getFlashcards(deckId: ID!): [Flashcard]
-  getDueFlashcards: [Flashcard]
   getGroups: [Group]
   getGroup(groupId: ID!): Group
   getUserSettings: UserSettings
@@ -169,9 +141,6 @@ type Mutation {
   createNote(input: CreateNoteInput!): Note
   updateNote(noteId: ID!, input: UpdateNoteInput!): Note
   deleteNote(noteId: ID!): Boolean
-  createFlashcard(input: CreateFlashcardInput!): Flashcard
-  updateFlashcard(cardId: ID!, input: UpdateFlashcardInput!): Flashcard
-  reviewFlashcard(cardId: ID!, quality: Int!): Flashcard
   createGroup(input: CreateGroupInput!): Group
   updateGroup(groupId: ID!, input: UpdateGroupInput!): Group
   deleteGroup(groupId: ID!): Boolean

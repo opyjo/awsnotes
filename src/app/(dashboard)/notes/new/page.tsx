@@ -183,7 +183,7 @@ export default function NewNotePage() {
           <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">AI tools</h3>
             <p className="text-sm text-muted-foreground">
-              Use in-editor AI summarize/explain while writing. Chat and flashcards become available after saving.
+              Use in-editor AI summarize/explain while writing. Chat becomes available after saving.
             </p>
           </div>
         </NotesToolsPanel>

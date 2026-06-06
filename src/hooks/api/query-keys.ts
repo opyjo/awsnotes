@@ -11,12 +11,6 @@ export const queryKeys = {
     lists: () => [...queryKeys.groups.all, 'list'] as const,
     list: () => [...queryKeys.groups.lists()] as const,
   },
-  flashcards: {
-    all: ['flashcards'] as const,
-    lists: () => [...queryKeys.flashcards.all, 'list'] as const,
-    byDeck: (deckId: string) => [...queryKeys.flashcards.lists(), { deckId }] as const,
-    due: () => [...queryKeys.flashcards.lists(), 'due'] as const,
-  },
   videos: {
     all: ['videos'] as const,
     lists: () => [...queryKeys.videos.all, 'list'] as const,

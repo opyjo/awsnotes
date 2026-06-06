@@ -20,11 +20,11 @@ export default function Home() {
       <main className="w-full max-w-4xl space-y-8 relative z-10">
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            AWS Study Notes & Flashcards
+            AWS Study Notes
           </h1>
           <p className="text-xl text-muted-foreground">
-            Create study notes with screenshots, generate flashcards, and review
-            them using spaced repetition for AWS certification exams.
+            Create study notes with screenshots and AI-powered tools
+            for AWS certification exams.
           </p>
         </div>
 
@@ -39,17 +39,17 @@ export default function Home() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Flashcards</CardTitle>
+              <CardTitle>AI Tutor</CardTitle>
               <CardDescription>
-                Generate flashcards from your notes and organize them into decks
+                Get AI-powered explanations and summaries of your study notes
               </CardDescription>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Spaced Repetition</CardTitle>
+              <CardTitle>Video Lessons</CardTitle>
               <CardDescription>
-                Review flashcards using the proven SM-2 algorithm
+                Watch video lessons and track your progress
               </CardDescription>
             </CardHeader>
           </Card>

@@ -1,7 +1,6 @@
 import { generateClient, GraphQLResult } from "aws-amplify/api";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
-import type { Flashcard, CreateFlashcardInput } from "@/types/flashcard";
 import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
 import type {
   Video,
@@ -131,91 +130,6 @@ const UPDATE_NOTE = `
 const DELETE_NOTE = `
   mutation DeleteNote($noteId: ID!) {
     deleteNote(noteId: $noteId)
-  }
-`;
-
-const GET_FLASHCARDS = `
-  query GetFlashcards($deckId: ID!) {
-    getFlashcards(deckId: $deckId) {
-      cardId
-      deckId
-      front
-      back
-      noteId
-      easeFactor
-      interval
-      repetitions
-      nextReviewDate
-      createdAt
-    }
-  }
-`;
-
-const GET_DUE_FLASHCARDS = `
-  query GetDueFlashcards {
-    getDueFlashcards {
-      cardId
-      deckId
-      front
-      back
-      noteId
-      easeFactor
-      interval
-      repetitions
-      nextReviewDate
-      createdAt
-    }
-  }
-`;
-
-const CREATE_FLASHCARD = `
-  mutation CreateFlashcard($input: CreateFlashcardInput!) {
-    createFlashcard(input: $input) {
-      cardId
-      deckId
-      front
-      back
-      noteId
-      easeFactor
-      interval
-      repetitions
-      nextReviewDate
-      createdAt
-    }
-  }
-`;
-
-const UPDATE_FLASHCARD = `
-  mutation UpdateFlashcard($cardId: ID!, $input: UpdateFlashcardInput!) {
-    updateFlashcard(cardId: $cardId, input: $input) {
-      cardId
-      deckId
-      front
-      back
-      noteId
-      easeFactor
-      interval
-      repetitions
-      nextReviewDate
-      createdAt
-    }
-  }
-`;
-
-const REVIEW_FLASHCARD = `
-  mutation ReviewFlashcard($cardId: ID!, $quality: Int!) {
-    reviewFlashcard(cardId: $cardId, quality: $quality) {
-      cardId
-      deckId
-      front
-      back
-      noteId
-      easeFactor
-      interval
-      repetitions
-      nextReviewDate
-      createdAt
-    }
   }
 `;
 
@@ -396,66 +310,6 @@ export const notesApi = {
     })) as GraphQLResult<{ deleteNote: boolean }>;
     const data = handleGraphQLResponse(response, "deleteNote");
     return data.deleteNote ?? false;
-  },
-};
-
-export const flashcardsApi = {
-  getFlashcards: async (deckId: string): Promise<Flashcard[]> => {
-    const response = (await getClient().graphql({
-      query: GET_FLASHCARDS,
-      variables: { deckId },
-    })) as GraphQLResult<{ getFlashcards: Flashcard[] }>;
-    const data = handleGraphQLResponse(response, "getFlashcards");
-    return data.getFlashcards || [];
-  },
-
-  getDueFlashcards: async (): Promise<Flashcard[]> => {
-    const response = (await getClient().graphql({
-      query: GET_DUE_FLASHCARDS,
-    })) as GraphQLResult<{ getDueFlashcards: Flashcard[] }>;
-    const data = handleGraphQLResponse(response, "getDueFlashcards");
-    return data.getDueFlashcards || [];
-  },
-
-  createFlashcard: async (input: CreateFlashcardInput): Promise<Flashcard> => {
-    const response = (await getClient().graphql({
-      query: CREATE_FLASHCARD,
-      variables: { input },
-    })) as GraphQLResult<{ createFlashcard: Flashcard }>;
-    const data = handleGraphQLResponse(response, "createFlashcard");
-    return data.createFlashcard;
-  },
-
-  updateFlashcard: async (
-    cardId: string,
-    input: { deckId?: string; front?: string; back?: string },
-  ): Promise<Flashcard> => {
-    const response = (await getClient().graphql({
-      query: UPDATE_FLASHCARD,
-      variables: { cardId, input },
-    })) as GraphQLResult<{ updateFlashcard: Flashcard }>;
-    const data = handleGraphQLResponse(response, "updateFlashcard");
-    return data.updateFlashcard;
-  },
-
-  reviewFlashcard: async (
-    cardId: string,
-    quality: number,
-  ): Promise<Flashcard> => {
-    const response = (await getClient().graphql({
-      query: REVIEW_FLASHCARD,
-      variables: { cardId, quality },
-    })) as GraphQLResult<{ reviewFlashcard: Flashcard }>;
-    
-    if (response.errors && response.errors.length > 0) {
-      throw new Error(response.errors.map(e => e.message).join(", "));
-    }
-    
-    if (!response.data?.reviewFlashcard) {
-      throw new Error("No data returned from reviewFlashcard");
-    }
-    
-    return response.data.reviewFlashcard;
   },
 };
 
