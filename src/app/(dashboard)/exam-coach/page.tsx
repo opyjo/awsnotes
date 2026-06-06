@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { getAuthToken } from "@/lib/aws/cognito";
 import {
   AVAILABLE_MODELS,
@@ -17,6 +17,45 @@ interface FollowUpMessage {
   content: string;
   savedToNotes?: boolean;
 }
+
+const STORAGE_KEY = "exam-coach-state";
+
+interface ExamCoachState {
+  question: string;
+  response: string;
+  selectedModel: ModelId;
+  followUpMessages: FollowUpMessage[];
+  isSaved: boolean;
+  savedConceptId: string | null;
+  savedNotes: KeyConceptNote[];
+}
+
+const loadFromStorage = (): ExamCoachState | null => {
+  if (typeof globalThis.window === "undefined") return null;
+  try {
+    const stored = globalThis.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as ExamCoachState;
+    }
+  } catch {
+    console.error("Error loading exam coach state from storage");
+  }
+  return null;
+};
+
+const saveToStorage = (state: ExamCoachState) => {
+  if (typeof globalThis.window === "undefined") return;
+  try {
+    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    console.error("Error saving exam coach state to storage");
+  }
+};
+
+const clearStorage = () => {
+  if (typeof globalThis.window === "undefined") return;
+  globalThis.localStorage.removeItem(STORAGE_KEY);
+};
 
 export default function ExamCoachPage() {
   const [question, setQuestion] = useState("");
@@ -37,6 +76,35 @@ export default function ExamCoachPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const followUpEndRef = useRef<HTMLDivElement | null>(null);
   const { createConcept, updateConcept, isCreating } = useKeyConcepts();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const stored = loadFromStorage();
+    if (stored) {
+      setQuestion(stored.question);
+      setResponse(stored.response);
+      setSelectedModel(stored.selectedModel);
+      setFollowUpMessages(stored.followUpMessages);
+      setIsSaved(stored.isSaved);
+      setSavedConceptId(stored.savedConceptId);
+      setSavedNotes(stored.savedNotes);
+    }
+  }, []);
+
+  // Save state to localStorage on changes
+  useEffect(() => {
+    if (question || response) {
+      saveToStorage({
+        question,
+        response,
+        selectedModel,
+        followUpMessages,
+        isSaved,
+        savedConceptId,
+        savedNotes,
+      });
+    }
+  }, [question, response, selectedModel, followUpMessages, isSaved, savedConceptId, savedNotes]);
 
   const handleSubmit = useCallback(async () => {
     if (!question.trim() || isLoading) return;
@@ -134,6 +202,7 @@ export default function ExamCoachPage() {
     setFollowUpMessages([]);
     setFollowUpInput("");
     setIsFollowUpLoading(false);
+    clearStorage();
   };
 
   const handleSaveConcept = useCallback(async () => {
