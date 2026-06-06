@@ -119,6 +119,12 @@ input SaveVideoProgressInput {
   notes: String
 }
 
+type KeyConceptNote {
+  question: String!
+  answer: String!
+  savedAt: AWSDateTime!
+}
+
 type KeyConcept {
   conceptId: ID!
   topic: String!
@@ -126,6 +132,7 @@ type KeyConcept {
   distractorPattern: String!
   theRule: String!
   sourceQuestion: String
+  notes: String
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -136,6 +143,15 @@ input CreateKeyConceptInput {
   distractorPattern: String!
   theRule: String!
   sourceQuestion: String
+}
+
+input KeyConceptNoteInput {
+  question: String!
+  answer: String!
+}
+
+input UpdateKeyConceptInput {
+  notes: String
 }
 
 type NotesConnection {
@@ -171,5 +187,6 @@ type Mutation {
   deleteVideo(videoId: ID!): Boolean
   saveVideoProgress(input: SaveVideoProgressInput!): VideoProgress
   createKeyConcept(input: CreateKeyConceptInput!): KeyConcept
+  updateKeyConcept(conceptId: ID!, input: UpdateKeyConceptInput!): KeyConcept
   deleteKeyConcept(conceptId: ID!): Boolean
 }

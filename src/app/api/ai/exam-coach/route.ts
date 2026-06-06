@@ -19,6 +19,8 @@ const EXAM_COACH_SYSTEM_PROMPT = `You are an expert AWS SAA-C03 exam coach. When
 
 Do NOT deviate from this format. Do NOT add extra sections. Always provide all 4 fields. Be concise but thorough in each field.`;
 
+const EXAM_COACH_FOLLOWUP_PROMPT = `You are an expert AWS SAA-C03 exam coach. You are continuing a conversation about an AWS exam question that you previously analyzed. Answer the follow-up question helpfully and concisely. Stay focused on the exam context and help the student understand the concept better.`;
+
 const isO1Model = (model: string) => model.startsWith("o1");
 
 const streamOpenAI = async function* (
@@ -85,16 +87,23 @@ export const POST = async (req: NextRequest) => {
     }
 
     const body = await req.json();
-    const { question, model }: { question: string; model: ModelId } = body;
+    const { question, messages: bodyMessages, model }: {
+      question?: string;
+      messages?: Array<{ role: "user" | "assistant"; content: string }>;
+      model: ModelId;
+    } = body;
 
-    if (!question || typeof question !== "string") {
+    // Support both single question (backward compat) and multi-turn messages
+    const isFollowUp = Array.isArray(bodyMessages) && bodyMessages.length > 0;
+
+    if (!isFollowUp && (!question || typeof question !== "string")) {
       return new Response(
-        JSON.stringify({ error: "question is required and must be a string" }),
+        JSON.stringify({ error: "question or messages is required" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (question.length > 10000) {
+    if (question && question.length > 10000) {
       return new Response(
         JSON.stringify({ error: "question exceeds maximum allowed length" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -109,9 +118,11 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-      { role: "user", content: question },
-    ];
+    const messages: Array<{ role: "user" | "assistant"; content: string }> = isFollowUp
+      ? bodyMessages!
+      : [{ role: "user", content: question! }];
+
+    const systemPrompt = isFollowUp ? EXAM_COACH_FOLLOWUP_PROMPT : EXAM_COACH_SYSTEM_PROMPT;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -119,11 +130,11 @@ export const POST = async (req: NextRequest) => {
         try {
           let generator: AsyncGenerator<string, void, unknown>;
           if (modelConfig.provider === "openai") {
-            generator = streamOpenAI(messages, model as OpenAIModel, EXAM_COACH_SYSTEM_PROMPT);
+            generator = streamOpenAI(messages, model as OpenAIModel, systemPrompt);
           } else if (modelConfig.provider === "moonshot") {
-            generator = streamMoonshot(messages, EXAM_COACH_SYSTEM_PROMPT, model as MoonshotModel);
+            generator = streamMoonshot(messages, systemPrompt, model as MoonshotModel);
           } else {
-            generator = streamAnthropic(messages, EXAM_COACH_SYSTEM_PROMPT, model as AnthropicModel);
+            generator = streamAnthropic(messages, systemPrompt, model as AnthropicModel);
           }
 
           for await (const chunk of generator) {

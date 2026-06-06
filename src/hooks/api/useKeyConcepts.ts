@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { keyConceptsApi } from '@/lib/aws/appsync';
 import { queryKeys } from './query-keys';
-import type { KeyConcept, CreateKeyConceptInput } from '@/types/key-concept';
+import type { KeyConcept, CreateKeyConceptInput, UpdateKeyConceptInput } from '@/types/key-concept';
 import { useAuth } from '@/context/AuthContext';
 
 export const useKeyConcepts = () => {
@@ -48,6 +48,36 @@ export const useKeyConcepts = () => {
     },
   });
 
+  const updateConceptMutation = useMutation({
+    mutationFn: ({ conceptId, input }: { conceptId: string; input: UpdateKeyConceptInput }) =>
+      keyConceptsApi.updateKeyConcept(conceptId, input),
+    onMutate: async ({ conceptId, input }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.keyConcepts.list() });
+      const previous = queryClient.getQueryData<KeyConcept[]>(queryKeys.keyConcepts.list());
+
+      if (previous) {
+        queryClient.setQueryData<KeyConcept[]>(
+          queryKeys.keyConcepts.list(),
+          previous.map((c) =>
+            c.conceptId === conceptId
+              ? { ...c, ...input, updatedAt: new Date().toISOString() }
+              : c
+          ),
+        );
+      }
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.keyConcepts.list(), context.previous);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.keyConcepts.list() });
+    },
+  });
+
   const deleteConceptMutation = useMutation({
     mutationFn: (conceptId: string) => keyConceptsApi.deleteKeyConcept(conceptId),
     onMutate: async (conceptId) => {
@@ -81,9 +111,12 @@ export const useKeyConcepts = () => {
     error: conceptsQuery.error?.message ?? null,
 
     createConcept: createConceptMutation.mutateAsync,
+    updateConcept: (conceptId: string, input: UpdateKeyConceptInput) =>
+      updateConceptMutation.mutateAsync({ conceptId, input }),
     deleteConcept: deleteConceptMutation.mutateAsync,
 
     isCreating: createConceptMutation.isPending,
+    isUpdating: updateConceptMutation.isPending,
     isDeleting: deleteConceptMutation.isPending,
 
     refetch: conceptsQuery.refetch,

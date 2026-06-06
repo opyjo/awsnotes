@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useKeyConcepts } from "@/hooks/api/useKeyConcepts";
+import type { KeyConceptNote } from "@/types/key-concept";
 
 export default function KeyConceptsPage() {
   const { concepts, isLoading, isError, error, deleteConcept, isDeleting } =
     useKeyConcepts();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const handleDelete = async (conceptId: string) => {
     if (!confirm("Delete this key concept?")) return;
@@ -17,6 +19,18 @@ export default function KeyConceptsPage() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const toggleExpand = (conceptId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(conceptId)) {
+        next.delete(conceptId);
+      } else {
+        next.add(conceptId);
+      }
+      return next;
+    });
   };
 
   return (
@@ -86,64 +100,129 @@ export default function KeyConceptsPage() {
       )}
 
       {!isLoading && concepts.length > 0 && (
-        <div className="space-y-4">
-          {concepts.map((concept) => (
-            <div
-              key={concept.conceptId}
-              className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-sm p-6 space-y-3"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <h3 className="text-base font-semibold text-foreground">
-                  {concept.topic}
-                </h3>
-                <button
-                  onClick={() => handleDelete(concept.conceptId)}
-                  disabled={isDeleting && deletingId === concept.conceptId}
-                  className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                  title="Delete concept"
+        <div className="space-y-3">
+          {concepts.map((concept) => {
+            const isExpanded = expandedIds.has(concept.conceptId);
+            return (
+              <div
+                key={concept.conceptId}
+                className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden"
+              >
+                <div
+                  className="flex items-center justify-between gap-4 p-4 cursor-pointer select-none hover:bg-muted/30 transition-colors"
+                  onClick={() => toggleExpand(concept.conceptId)}
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <div className="flex items-center gap-3 min-w-0">
+                    <svg
+                      className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                    <h3 className="text-base font-semibold text-foreground truncate">
+                      {concept.topic}
+                    </h3>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {new Date(concept.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(concept.conceptId);
+                    }}
+                    disabled={isDeleting && deletingId === concept.conceptId}
+                    className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                    title="Delete concept"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-              <div className="grid gap-3 text-sm">
-                <div>
-                  <span className="font-medium text-muted-foreground">
-                    What it&apos;s testing:
-                  </span>
-                  <p className="mt-0.5 text-foreground">{concept.whatItsTesting}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">
-                    Distractor pattern:
-                  </span>
-                  <p className="mt-0.5 text-foreground">{concept.distractorPattern}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">
-                    The rule:
-                  </span>
-                  <p className="mt-0.5 text-foreground">{concept.theRule}</p>
+                <div
+                  className="grid transition-all duration-200 ease-in-out"
+                  style={{
+                    gridTemplateRows: isExpanded ? "1fr" : "0fr",
+                  }}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 pt-1 border-t border-border/30">
+                      <div className="grid gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">
+                            What it&apos;s testing:
+                          </span>
+                          <p className="mt-0.5 text-foreground">{concept.whatItsTesting}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">
+                            Distractor pattern:
+                          </span>
+                          <p className="mt-0.5 text-foreground">{concept.distractorPattern}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">
+                            The rule:
+                          </span>
+                          <p className="mt-0.5 text-foreground">{concept.theRule}</p>
+                        </div>
+                        {(() => {
+                          let parsedNotes: KeyConceptNote[] = [];
+                          try {
+                            if (concept.notes) {
+                              parsedNotes = typeof concept.notes === "string"
+                                ? JSON.parse(concept.notes as string)
+                                : concept.notes;
+                            }
+                          } catch { /* ignore parse errors */ }
+                          return parsedNotes.length > 0 ? (
+                            <div className="mt-2 pt-3 border-t border-border/30">
+                              <span className="font-medium text-muted-foreground">
+                                Follow-up Notes:
+                              </span>
+                              <div className="mt-2 space-y-3">
+                                {parsedNotes.map((note, i) => (
+                                  <div key={i} className="pl-3 border-l-2 border-primary/20">
+                                    <p className="text-muted-foreground">
+                                      <span className="font-medium">Q:</span>{" "}
+                                      <span className="text-foreground">{note.question}</span>
+                                    </p>
+                                    <p className="mt-1 text-muted-foreground">
+                                      <span className="font-medium">A:</span>{" "}
+                                      <span className="text-foreground">{note.answer}</span>
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="pt-2 text-xs text-muted-foreground">
-                Saved {new Date(concept.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

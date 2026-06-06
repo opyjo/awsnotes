@@ -50,7 +50,7 @@ export interface ModelConfig {
   description: string;
 }
 
-export const DEFAULT_CHAT_MODEL: ModelId = "claude-sonnet-4-6";
+export const DEFAULT_CHAT_MODEL: ModelId = "kimi-k2.6";
 
 export const AVAILABLE_MODELS: ModelConfig[] = [
   // OpenAI Models

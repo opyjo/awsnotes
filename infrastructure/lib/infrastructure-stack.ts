@@ -856,6 +856,34 @@ $util.toJson($ctx.result)`,
       ),
     });
 
+    // updateKeyConcept
+    notesDs.createResolver("UpdateKeyConceptResolver", {
+      typeName: "Mutation",
+      fieldName: "updateKeyConcept",
+      requestMappingTemplate: appsync.MappingTemplate.fromString(
+        `{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "PK": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "SK": $util.dynamodb.toDynamoDBJson("KEYCONCEPT#$ctx.arguments.conceptId")
+  },
+  "update": {
+    "expression": "SET updatedAt = :now, notes = :notes",
+    "expressionValues": {
+      ":now": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
+      ":notes": $util.dynamodb.toDynamoDBJson($ctx.arguments.input.notes)
+    }
+  }
+}`,
+      ),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(
+        `#set($result = $ctx.result)
+#set($result.conceptId = $ctx.arguments.conceptId)
+$util.toJson($result)`,
+      ),
+    });
+
     // deleteKeyConcept
     notesDs.createResolver("DeleteKeyConceptResolver", {
       typeName: "Mutation",

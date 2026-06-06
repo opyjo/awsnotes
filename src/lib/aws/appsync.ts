@@ -2,7 +2,7 @@ import { generateClient, GraphQLResult } from "aws-amplify/api";
 import { fetchAuthSession } from "aws-amplify/auth";
 import type { Note, CreateNoteInput, UpdateNoteInput } from "@/types/note";
 import type { Group, CreateGroupInput, UpdateGroupInput } from "@/types/group";
-import type { KeyConcept, CreateKeyConceptInput } from "@/types/key-concept";
+import type { KeyConcept, CreateKeyConceptInput, UpdateKeyConceptInput } from "@/types/key-concept";
 import type {
   Video,
   CreateVideoInput,
@@ -823,6 +823,7 @@ const GET_KEY_CONCEPTS = `
       distractorPattern
       theRule
       sourceQuestion
+      notes
       createdAt
       updatedAt
     }
@@ -838,6 +839,7 @@ const GET_KEY_CONCEPT = `
       distractorPattern
       theRule
       sourceQuestion
+      notes
       createdAt
       updatedAt
     }
@@ -853,6 +855,23 @@ const CREATE_KEY_CONCEPT = `
       distractorPattern
       theRule
       sourceQuestion
+      notes
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const UPDATE_KEY_CONCEPT = `
+  mutation UpdateKeyConcept($conceptId: ID!, $input: UpdateKeyConceptInput!) {
+    updateKeyConcept(conceptId: $conceptId, input: $input) {
+      conceptId
+      topic
+      whatItsTesting
+      distractorPattern
+      theRule
+      sourceQuestion
+      notes
       createdAt
       updatedAt
     }
@@ -914,6 +933,21 @@ export const keyConceptsApi = {
 
     const data = handleGraphQLResponse(response, "createKeyConcept");
     return data.createKeyConcept;
+  },
+
+  updateKeyConcept: async (conceptId: string, input: UpdateKeyConceptInput): Promise<KeyConcept> => {
+    const hasAuth = await checkAuthSession();
+    if (!hasAuth) {
+      throw new Error("Not authenticated. Please sign in.");
+    }
+
+    const response = (await getClient().graphql({
+      query: UPDATE_KEY_CONCEPT,
+      variables: { conceptId, input },
+    })) as GraphQLResult<{ updateKeyConcept: KeyConcept }>;
+
+    const data = handleGraphQLResponse(response, "updateKeyConcept");
+    return data.updateKeyConcept;
   },
 
   deleteKeyConcept: async (conceptId: string): Promise<boolean> => {
