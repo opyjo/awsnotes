@@ -324,12 +324,32 @@ export default function ExamCoachPage() {
   }, [followUpInput, isFollowUpLoading, question, response, followUpMessages, selectedModel]);
 
   const handleSaveNote = useCallback(async (messageIndex: number) => {
-    if (!savedConceptId) return;
-
     // The messageIndex is for the assistant message; the user question is the previous message
     const assistantMsg = followUpMessages[messageIndex];
     const userMsg = followUpMessages[messageIndex - 1];
     if (!assistantMsg || !userMsg || assistantMsg.role !== "assistant" || userMsg.role !== "user") return;
+
+    let conceptId = savedConceptId;
+
+    // Auto-save the concept first if it hasn't been saved yet
+    if (!conceptId) {
+      const parsed = parseExamCoachResponse(response);
+      if (!parsed) {
+        setSaveError("Could not parse the response to save.");
+        return;
+      }
+      try {
+        const input = toKeyConceptInput(parsed, question.trim() || undefined);
+        const created = await createConcept(input);
+        conceptId = created.conceptId;
+        setSavedConceptId(conceptId);
+        setIsSaved(true);
+      } catch (err) {
+        console.error("Failed to auto-save concept:", err);
+        setSaveError(err instanceof Error ? err.message : "Failed to save concept");
+        return;
+      }
+    }
 
     const newNote: KeyConceptNote = {
       question: userMsg.content,
@@ -340,7 +360,7 @@ export default function ExamCoachPage() {
     const updatedNotes = [...savedNotes, newNote];
 
     try {
-      await updateConcept(savedConceptId, { notes: JSON.stringify(updatedNotes) });
+      await updateConcept(conceptId, { notes: JSON.stringify(updatedNotes) });
       setSavedNotes(updatedNotes);
       setFollowUpMessages((prev) => {
         const updated = [...prev];
@@ -350,7 +370,7 @@ export default function ExamCoachPage() {
     } catch (err) {
       console.error("Failed to save note:", err);
     }
-  }, [savedConceptId, followUpMessages, savedNotes, updateConcept]);
+  }, [savedConceptId, followUpMessages, savedNotes, updateConcept, response, question, createConcept]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -505,7 +525,7 @@ export default function ExamCoachPage() {
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content || "...") }}
                           />
                         )}
-                        {msg.content && !isFollowUpLoading && isSaved && savedConceptId && (
+                        {msg.content && !isFollowUpLoading && (
                           <div className="mt-2 pt-2 border-t border-border/30">
                             <button
                               onClick={() => handleSaveNote(idx)}
