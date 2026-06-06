@@ -36,13 +36,10 @@ export type AnthropicModel =
   | "claude-3-7-sonnet-20250219"
   | "claude-3-5-haiku-20241022";
 
-// Moonshot models (Kimi K2)
+// Moonshot models (Kimi)
 export type MoonshotModel =
-  | "kimi-k2-0711-preview"
-  | "kimi-k2-turbo-preview"
-  | "kimi-k2-0905-preview"
-  | "kimi-k2-thinking"
-  | "kimi-k2-thinking-turbo";
+  | "kimi-k2.6"
+  | "kimi-k2.5";
 
 export type ModelId = OpenAIModel | AnthropicModel | MoonshotModel;
 
@@ -238,36 +235,18 @@ export const AVAILABLE_MODELS: ModelConfig[] = [
     name: "Claude 3.5 Haiku",
     description: "Fast Claude 3.5 snapshot",
   },
-  // Moonshot Models (Kimi K2)
+  // Moonshot Models (Kimi)
   {
-    id: "kimi-k2-0711-preview",
+    id: "kimi-k2.6",
     provider: "moonshot",
-    name: "Kimi K2",
-    description: "Powerful open-source model",
+    name: "Kimi K2.6",
+    description: "Latest multimodal agentic model with long-horizon coding",
   },
   {
-    id: "kimi-k2-turbo-preview",
+    id: "kimi-k2.5",
     provider: "moonshot",
-    name: "Kimi K2 Turbo",
-    description: "High-speed Kimi K2 variant",
-  },
-  {
-    id: "kimi-k2-0905-preview",
-    provider: "moonshot",
-    name: "Kimi K2 (Sep)",
-    description: "Latest Kimi K2 update",
-  },
-  {
-    id: "kimi-k2-thinking",
-    provider: "moonshot",
-    name: "Kimi K2 Thinking",
-    description: "Advanced reasoning model",
-  },
-  {
-    id: "kimi-k2-thinking-turbo",
-    provider: "moonshot",
-    name: "Kimi K2 Thinking Turbo",
-    description: "Fastest Kimi K2 reasoning model",
+    name: "Kimi K2.5",
+    description: "Multimodal model with thinking and agent capabilities",
   },
 ];
 
