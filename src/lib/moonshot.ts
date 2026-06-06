@@ -35,7 +35,7 @@ export const streamChatCompletion = async function* (
         content: msg.content,
       })),
     ],
-    temperature: 0.6,
+    temperature: 1,
     stream: true,
   });
 
