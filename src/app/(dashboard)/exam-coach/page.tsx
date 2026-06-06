@@ -487,10 +487,24 @@ export default function ExamCoachPage() {
                   >
                     {msg.role === "assistant" ? (
                       <>
-                        <div
-                          className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:font-semibold [&_p]:my-1 [&_p]:leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content || "...") }}
-                        />
+                        {!msg.content && isFollowUpLoading ? (
+                          <div className="thinking-gradient rounded-lg px-4 py-3 flex items-center gap-3">
+                            <div className="flex items-center gap-1">
+                              <span className="thinking-dot w-2 h-2 rounded-full bg-primary" />
+                              <span className="thinking-dot w-2 h-2 rounded-full bg-primary" />
+                              <span className="thinking-dot w-2 h-2 rounded-full bg-primary" />
+                            </div>
+                            <span className="text-xs text-muted-foreground animate-pulse">Thinking...</span>
+                            <div className="flex-1 h-1 rounded-full overflow-hidden bg-muted/50">
+                              <div className="thinking-bar h-full w-full rounded-full" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:font-semibold [&_p]:my-1 [&_p]:leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content || "...") }}
+                          />
+                        )}
                         {msg.content && !isFollowUpLoading && isSaved && savedConceptId && (
                           <div className="mt-2 pt-2 border-t border-border/30">
                             <button
@@ -538,7 +552,9 @@ export default function ExamCoachPage() {
                 disabled={isFollowUpLoading || !followUpInput.trim()}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isFollowUpLoading ? "..." : "Send"}
+                {isFollowUpLoading ? (
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                ) : "Send"}
               </button>
             </div>
           </div>
