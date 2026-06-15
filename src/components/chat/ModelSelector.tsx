@@ -10,17 +10,6 @@ interface ModelSelectorProps {
   className?: string;
 }
 
-const OpenAIIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-    />
-  </svg>
-);
-
 const AnthropicIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
@@ -50,7 +39,6 @@ export const ModelSelector = ({
 }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const openaiModels = AVAILABLE_MODELS.filter((m) => m.provider === "openai");
   const anthropicModels = AVAILABLE_MODELS.filter((m) => m.provider === "anthropic");
   const moonshotModels = AVAILABLE_MODELS.filter((m) => m.provider === "moonshot");
 
@@ -86,7 +74,7 @@ export const ModelSelector = ({
       )}
     >
       <span className="text-muted-foreground">
-        {model.provider === "openai" ? <OpenAIIcon /> : model.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
+        {model.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
       </span>
       <div className="flex-1 min-w-0">
         <div className="font-medium leading-snug">{model.name}</div>
@@ -125,7 +113,7 @@ export const ModelSelector = ({
         aria-expanded={isOpen}
       >
         <span className="text-muted-foreground">
-          {selectedModelConfig.provider === "openai" ? <OpenAIIcon /> : selectedModelConfig.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
+          {selectedModelConfig.provider === "moonshot" ? <MoonshotIcon /> : <AnthropicIcon />}
         </span>
         <span className="min-w-0 flex-1 truncate text-left font-medium">
           {selectedModelConfig.name}
@@ -150,14 +138,6 @@ export const ModelSelector = ({
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full z-20 mt-1 max-h-96 w-[min(92vw,20rem)] overflow-y-auto rounded-md border border-input bg-background shadow-lg sm:left-0 sm:right-auto sm:w-80">
             <div className="px-3 py-2 border-b border-border">
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <OpenAIIcon />
-                OpenAI
-              </div>
-            </div>
-            {openaiModels.map(renderModelItem)}
-
-            <div className="px-3 py-2 border-b border-t border-border">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <AnthropicIcon />
                 Anthropic

@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server";
-import OpenAI from "openai";
 import { streamChatCompletion as streamAnthropic } from "@/lib/anthropic";
 import { streamChatCompletion as streamMoonshot } from "@/lib/moonshot";
-import { AVAILABLE_MODELS, type ModelId, type OpenAIModel, type AnthropicModel, type MoonshotModel } from "@/types/chat";
-
-const openaiApiKey = process.env.OPENAI_API_KEY;
-const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
+import { AVAILABLE_MODELS, type ModelId, type AnthropicModel, type MoonshotModel } from "@/types/chat";
 
 const AWS_SYSTEM_PROMPT = `You are an expert AWS Solutions Architect tutor specializing in helping students pass the AWS Certified Solutions Architect - Associate (SAA-C03) exam. Your responses should ALWAYS be tailored specifically to this certification exam.
 
@@ -33,70 +29,6 @@ Your teaching approach:
 7. **Concise Summaries**: End longer explanations with a brief "**Key Points for Exam:**" summary.
 
 Always frame your responses from the perspective of "What does the AWS Solutions Architect Associate exam expect you to know about this topic?" rather than general AWS knowledge.`;
-
-// o1 models don't support system messages, so we prepend it to the first user message
-const isO1Model = (model: string) => model.startsWith("o1");
-
-const streamOpenAI = async function* (
-  messages: Array<{ role: "user" | "assistant"; content: string }>,
-  model: OpenAIModel,
-  systemPrompt: string
-): AsyncGenerator<string, void, unknown> {
-  if (!openai) {
-    throw new Error("OpenAI API key is not configured");
-  }
-
-  // Handle o1 models differently - they don't support system messages or streaming
-  if (isO1Model(model)) {
-    const modifiedMessages = messages.map((msg, index) => {
-      if (index === 0 && msg.role === "user") {
-        return {
-          role: "user" as const,
-          content: `${systemPrompt}\n\n${msg.content}`,
-        };
-      }
-      return {
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      };
-    });
-
-    const response = await openai.chat.completions.create({
-      model,
-      messages: modifiedMessages,
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (content) {
-      yield content;
-    }
-    return;
-  }
-
-  // Regular models with streaming
-  const stream = await openai.chat.completions.create({
-    model,
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      ...messages.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
-    ],
-    temperature: 0.7,
-    stream: true,
-  });
-
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content;
-    if (content) {
-      yield content;
-    }
-  }
-};
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -146,9 +78,7 @@ export const POST = async (req: NextRequest) => {
       async start(controller) {
         try {
           let generator: AsyncGenerator<string, void, unknown>;
-          if (modelConfig.provider === "openai") {
-            generator = streamOpenAI(messages, model as OpenAIModel, effectiveSystemPrompt);
-          } else if (modelConfig.provider === "moonshot") {
+          if (modelConfig.provider === "moonshot") {
             generator = streamMoonshot(messages, effectiveSystemPrompt, model as MoonshotModel);
           } else {
             generator = streamAnthropic(messages, effectiveSystemPrompt, model as AnthropicModel);
