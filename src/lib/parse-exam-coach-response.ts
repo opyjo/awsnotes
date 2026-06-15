@@ -11,10 +11,10 @@ export function parseExamCoachResponse(markdown: string): ParsedResponse | null 
     return match?.[1]?.trim() ?? "";
   };
 
-  // Match bold-prefixed fields: **Topic:** ... (up to next ** or end)
-  const topic = extract(/\*\*\s*(?:🏷️\s*)?Topic\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
-  // Match both **Rule:** and **The rule:** for backward compat with cached responses
-  const rule = extract(/\*\*\s*(?:📏\s*)?(?:The\s+)?[Rr]ule\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
+  // Topic: capture until the next field header (**Rule: or **The rule:)
+  const topic = extract(/\*\*\s*(?:🏷️\s*)?Topic\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*\s*(?:📏\s*)?(?:The\s+)?[Rr]ule\s*:?\s*\*\*|$)/i);
+  // Rule: last field, capture everything to end of string
+  const rule = extract(/\*\*\s*(?:📏\s*)?(?:The\s+)?[Rr]ule\s*:?\s*\*\*[:\s]*([\s\S]*?)$/i);
 
   if (!topic && !rule) {
     return null;
