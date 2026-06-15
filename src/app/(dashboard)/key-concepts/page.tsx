@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useKeyConcepts } from "@/hooks/api/useKeyConcepts";
+import { markdownToHtml } from "@/lib/markdown-to-html";
 import type { KeyConceptNote } from "@/types/key-concept";
 
 export default function KeyConceptsPage() {
@@ -189,10 +190,13 @@ export default function KeyConceptsPage() {
                                       <span className="font-medium">Q:</span>{" "}
                                       <span className="text-foreground">{note.question}</span>
                                     </p>
-                                    <p className="mt-1 text-muted-foreground">
+                                    <div className="mt-1 text-muted-foreground">
                                       <span className="font-medium">A:</span>{" "}
-                                      <span className="text-foreground">{note.answer}</span>
-                                    </p>
+                                      <div
+                                        className="mt-1 text-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:font-semibold [&_p]:my-1 [&_p]:leading-relaxed [&_table]:w-full [&_table]:text-xs [&_table]:border-collapse [&_th]:border [&_th]:border-border/50 [&_th]:px-2 [&_th]:py-1 [&_th]:bg-muted/50 [&_th]:text-left [&_td]:border [&_td]:border-border/50 [&_td]:px-2 [&_td]:py-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1"
+                                        dangerouslySetInnerHTML={{ __html: markdownToHtml(note.answer) }}
+                                      />
+                                    </div>
                                   </div>
                                 ))}
                               </div>
