@@ -119,19 +119,10 @@ input SaveVideoProgressInput {
   notes: String
 }
 
-type KeyConceptNote {
-  question: String!
-  answer: String!
-  savedAt: AWSDateTime!
-}
-
 type KeyConcept {
   conceptId: ID!
   topic: String!
-  whatItsTesting: String!
-  distractorPattern: String!
-  theRule: String!
-  sourceQuestion: String
+  rule: String!
   notes: String
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -139,10 +130,7 @@ type KeyConcept {
 
 input CreateKeyConceptInput {
   topic: String!
-  whatItsTesting: String!
-  distractorPattern: String!
-  theRule: String!
-  sourceQuestion: String
+  rule: String!
 }
 
 input KeyConceptNoteInput {

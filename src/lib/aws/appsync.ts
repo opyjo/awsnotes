@@ -819,10 +819,7 @@ const GET_KEY_CONCEPTS = `
     getKeyConcepts {
       conceptId
       topic
-      whatItsTesting
-      distractorPattern
-      theRule
-      sourceQuestion
+      rule
       notes
       createdAt
       updatedAt
@@ -835,10 +832,7 @@ const GET_KEY_CONCEPT = `
     getKeyConcept(conceptId: $conceptId) {
       conceptId
       topic
-      whatItsTesting
-      distractorPattern
-      theRule
-      sourceQuestion
+      rule
       notes
       createdAt
       updatedAt
@@ -851,10 +845,7 @@ const CREATE_KEY_CONCEPT = `
     createKeyConcept(input: $input) {
       conceptId
       topic
-      whatItsTesting
-      distractorPattern
-      theRule
-      sourceQuestion
+      rule
       notes
       createdAt
       updatedAt
@@ -867,10 +858,7 @@ const UPDATE_KEY_CONCEPT = `
     updateKeyConcept(conceptId: $conceptId, input: $input) {
       conceptId
       topic
-      whatItsTesting
-      distractorPattern
-      theRule
-      sourceQuestion
+      rule
       notes
       createdAt
       updatedAt

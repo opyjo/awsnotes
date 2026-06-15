@@ -798,7 +798,13 @@ $util.toJson($ctx.result)`,
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result.items)",
+        `#set($items = $ctx.result.items)
+#foreach($item in $items)
+  #if(!$item.rule && $item.theRule)
+    $util.qr($item.put("rule", $item.theRule))
+  #end
+#end
+$util.toJson($items)`,
       ),
     });
 
@@ -818,7 +824,12 @@ $util.toJson($ctx.result)`,
         }
       `),
       responseMappingTemplate: appsync.MappingTemplate.fromString(
-        "$util.toJson($ctx.result)",
+        `#if($ctx.result)
+#if(!$ctx.result.rule && $ctx.result.theRule)
+  $util.qr($ctx.result.put("rule", $ctx.result.theRule))
+#end
+#end
+$util.toJson($ctx.result)`,
       ),
     });
 
@@ -840,14 +851,9 @@ $util.toJson($ctx.result)`,
           "attributeValues": {
             "conceptId": $util.dynamodb.toDynamoDBJson($conceptId),
             "topic": $util.dynamodb.toDynamoDBJson($input.topic),
-            "whatItsTesting": $util.dynamodb.toDynamoDBJson($input.whatItsTesting),
-            "distractorPattern": $util.dynamodb.toDynamoDBJson($input.distractorPattern),
-            "theRule": $util.dynamodb.toDynamoDBJson($input.theRule),
+            "rule": $util.dynamodb.toDynamoDBJson($input.rule),
             "createdAt": $util.dynamodb.toDynamoDBJson($now),
             "updatedAt": $util.dynamodb.toDynamoDBJson($now)
-            #if($input.sourceQuestion)
-            ,"sourceQuestion": $util.dynamodb.toDynamoDBJson($input.sourceQuestion)
-            #end
           }
         }
       `),

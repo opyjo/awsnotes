@@ -216,14 +216,14 @@ export default function ExamCoachPage() {
     }
 
     try {
-      const input = toKeyConceptInput(parsed, question.trim() || undefined);
+      const input = toKeyConceptInput(parsed);
       const created = await createConcept(input);
       setIsSaved(true);
       setSavedConceptId(created.conceptId);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save concept");
     }
-  }, [response, question, isSaved, isCreating, createConcept]);
+  }, [response, isSaved, isCreating, createConcept]);
 
   const handleFollowUpSubmit = useCallback(async () => {
     if (!followUpInput.trim() || isFollowUpLoading) return;
@@ -339,7 +339,7 @@ export default function ExamCoachPage() {
         return;
       }
       try {
-        const input = toKeyConceptInput(parsed, question.trim() || undefined);
+        const input = toKeyConceptInput(parsed);
         const created = await createConcept(input);
         conceptId = created.conceptId;
         setSavedConceptId(conceptId);
@@ -370,7 +370,7 @@ export default function ExamCoachPage() {
     } catch (err) {
       console.error("Failed to save note:", err);
     }
-  }, [savedConceptId, followUpMessages, savedNotes, updateConcept, response, question, createConcept]);
+  }, [savedConceptId, followUpMessages, savedNotes, updateConcept, response, createConcept]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

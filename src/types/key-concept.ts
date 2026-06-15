@@ -7,10 +7,7 @@ export interface KeyConceptNote {
 export interface KeyConcept {
   conceptId: string;
   topic: string;
-  whatItsTesting: string;
-  distractorPattern: string;
-  theRule: string;
-  sourceQuestion?: string;
+  rule: string;
   notes?: KeyConceptNote[] | string;
   createdAt: string;
   updatedAt: string;
@@ -18,10 +15,7 @@ export interface KeyConcept {
 
 export interface CreateKeyConceptInput {
   topic: string;
-  whatItsTesting: string;
-  distractorPattern: string;
-  theRule: string;
-  sourceQuestion?: string;
+  rule: string;
 }
 
 export interface UpdateKeyConceptInput {

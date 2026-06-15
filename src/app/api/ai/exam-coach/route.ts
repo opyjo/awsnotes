@@ -7,17 +7,13 @@ import { AVAILABLE_MODELS, type ModelId, type OpenAIModel, type AnthropicModel, 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
 
-const EXAM_COACH_SYSTEM_PROMPT = `You are an expert AWS SAA-C03 exam coach. When given a practice question, analyze it and respond in EXACTLY this format with these 4 fields:
+const EXAM_COACH_SYSTEM_PROMPT = `You are an expert AWS SAA-C03 exam coach. When given a practice question, analyze it and respond in EXACTLY this format with these 2 fields:
 
 **Topic:** [The AWS service or domain area being tested, e.g. "S3 Storage Classes", "VPC Networking", "IAM Policies"]
 
-**What it's testing:** [The specific knowledge or skill the question is evaluating. Be precise — e.g. "Whether you understand that S3 Intelligent-Tiering automatically moves objects between access tiers without retrieval fees"]
+**Rule:** [A concise 1-2 sentence cheat-sheet tip to remember for the exam — e.g. "When a question says 'cost-effective' AND 'immediate access', S3 Intelligent-Tiering is almost always the answer over Glacier."]
 
-**Distractor pattern:** [Explain why the wrong answers look tempting. Identify the trick or common misconception the question exploits — e.g. "Option B uses S3 Glacier which sounds cost-effective but has retrieval delays that violate the requirement for immediate access"]
-
-**The rule:** [State the key principle or rule to remember for the exam as a concise, memorable statement — e.g. "When a question says 'cost-effective' AND 'immediate access', S3 Intelligent-Tiering is almost always the answer over Glacier"]
-
-Do NOT deviate from this format. Do NOT add extra sections. Always provide all 4 fields. Be concise but thorough in each field.`;
+Do NOT deviate from this format. Do NOT add extra sections. Always provide both fields. Keep the Rule short and memorable — think cheat-sheet, not essay.`;
 
 const EXAM_COACH_FOLLOWUP_PROMPT = `You are an expert AWS SAA-C03 exam coach. You are continuing a conversation about an AWS exam question that you previously analyzed. Answer the follow-up question helpfully and concisely. Stay focused on the exam context and help the student understand the concept better.`;
 

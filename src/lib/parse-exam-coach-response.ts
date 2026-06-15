@@ -2,9 +2,7 @@ import type { CreateKeyConceptInput } from "@/types/key-concept";
 
 interface ParsedResponse {
   topic: string;
-  whatItsTesting: string;
-  distractorPattern: string;
-  theRule: string;
+  rule: string;
 }
 
 export function parseExamCoachResponse(markdown: string): ParsedResponse | null {
@@ -15,31 +13,24 @@ export function parseExamCoachResponse(markdown: string): ParsedResponse | null 
 
   // Match bold-prefixed fields: **Topic:** ... (up to next ** or end)
   const topic = extract(/\*\*\s*(?:🏷️\s*)?Topic\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
-  const whatItsTesting = extract(/\*\*\s*(?:🎯\s*)?What\s+it(?:'|')s\s+testing\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
-  const distractorPattern = extract(/\*\*\s*(?:🚫\s*)?Distractor\s+pattern\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
-  const theRule = extract(/\*\*\s*(?:📏\s*)?The\s+rule\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
+  // Match both **Rule:** and **The rule:** for backward compat with cached responses
+  const rule = extract(/\*\*\s*(?:📏\s*)?(?:The\s+)?[Rr]ule\s*:?\s*\*\*[:\s]*([\s\S]*?)(?=\*\*|$)/i);
 
-  if (!topic && !whatItsTesting && !distractorPattern && !theRule) {
+  if (!topic && !rule) {
     return null;
   }
 
   return {
     topic: topic || "Unknown topic",
-    whatItsTesting: whatItsTesting || "Not parsed",
-    distractorPattern: distractorPattern || "Not parsed",
-    theRule: theRule || "Not parsed",
+    rule: rule || "Not parsed",
   };
 }
 
 export function toKeyConceptInput(
   parsed: ParsedResponse,
-  sourceQuestion?: string,
 ): CreateKeyConceptInput {
   return {
     topic: parsed.topic,
-    whatItsTesting: parsed.whatItsTesting,
-    distractorPattern: parsed.distractorPattern,
-    theRule: parsed.theRule,
-    sourceQuestion,
+    rule: parsed.rule,
   };
 }

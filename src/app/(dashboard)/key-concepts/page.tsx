@@ -167,24 +167,7 @@ export default function KeyConceptsPage() {
                   <div className="overflow-hidden">
                     <div className="px-4 pb-4 pt-1 border-t border-border/30">
                       <div className="grid gap-3 text-sm">
-                        <div>
-                          <span className="font-medium text-muted-foreground">
-                            What it&apos;s testing:
-                          </span>
-                          <p className="mt-0.5 text-foreground">{concept.whatItsTesting}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">
-                            Distractor pattern:
-                          </span>
-                          <p className="mt-0.5 text-foreground">{concept.distractorPattern}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">
-                            The rule:
-                          </span>
-                          <p className="mt-0.5 text-foreground">{concept.theRule}</p>
-                        </div>
+                        <p className="text-foreground leading-relaxed">{concept.rule}</p>
                         {(() => {
                           let parsedNotes: KeyConceptNote[] = [];
                           try {
